@@ -11,6 +11,11 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.303.8] - 2026-10-07
+
+### Fixed
+- re-anchor live frame after tmux pane resize (no more duplicated frame on kill-pane/split) (#3204) (6f07459d)
+
 ## [5.303.7] - 2026-10-07
 
 ### Added
