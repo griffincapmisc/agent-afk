@@ -11,8 +11,19 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.302.10] - 2026-10-07
+
 ### Changed
 - note dropped `**Done** — text` single-line form next to `'unknown'` in `FacetOutcomeSchema` JSDoc (#2797)
+
+### Added
+- downgrade self-reported Done using corroborating signals (#3168) (4b1b07a5)
+
+### Fixed
+- note dropped single-line Done form next to 'unknown' in schema JSDoc (#3165) (a4d78b4b)
+- wire DetachableToolRegistry.settled subscriber (#3164) (644bf907)
+- peer hardening — typo visibility, bare-filename guard, corrupt-orphan rescan test (#3161) (649073cb)
+- harden createGuardedLookup — catch callback throw, block non-IP, prove all=true (#3166) (ad9dfea9)
 
 ## [5.302.9] - 2026-10-07
 
