@@ -11,6 +11,14 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.303.7] - 2026-10-07
+
+### Added
+- add opt-in Stop hook that blocks closing on unproven external diagnosis (#3190) (22ca5a25)
+
+### Fixed
+- harden stream termination and retry observability (#3159) (3d9008fa)
+
 ## [5.303.6] - 2026-10-07
 
 ### Fixed
