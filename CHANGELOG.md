@@ -11,6 +11,21 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.303.2] - 2026-10-07
+
+### Added
+- add UPDATE-failure-resilience test for access tracking (#3192) (358c8669)
+
+### Fixed
+- migrate task-view describe blocks to task-view-mode.test.ts (#3200) (1308f538)
+- execFileSync for findGitRoot; shell-metachar tests; gitleaksignore cleanup (#3199) (ee2f4181)
+- add { unref? } option to sleepWithAbort; tighten test; cover sleep() unref paths (#3198) (b551e708)
+
+### Changed
+- Web dashboard: session titles, new-session hang, and sidecars for daemon/web/skill sessions (#3197) (91e2d6d5)
+- DEAD-033 incremental — remove 72 unused exports from src/agent/trace/index.ts (#3202) (3a725829)
+- patch picomatch ReDoS, bump openai+@types/node, fix website/ baseline-browser-mapping (#3193) (d7ba5ea7)
+
 ## [5.303.1] - 2026-10-07
 
 ### Added
