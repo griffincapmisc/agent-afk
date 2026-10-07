@@ -11,6 +11,15 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.302.11] - 2026-10-07
+
+### Added
+- add --predict flag and spec predictions field for deterministic operator-supplied predictions (#3162) (9cfccc5f)
+
+### Fixed
+- add portable POSIX-utility regression test for settle-after-kill fallback (#3167) (7833d6f9)
+- dispatch UserPromptSubmit in Telegram per-turn path (#3163) (f3853eb6)
+
 ## [5.302.10] - 2026-10-07
 
 ### Changed
