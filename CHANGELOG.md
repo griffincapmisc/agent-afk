@@ -11,6 +11,11 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.303.10] - 2026-10-07
+
+### Fixed
+- deliver non-blocking PreToolUse additionalContext (#3157) (e80d1327)
+
 ## [5.303.9] - 2026-10-07
 
 ### Fixed
