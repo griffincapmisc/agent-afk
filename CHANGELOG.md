@@ -11,6 +11,15 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.303.3] - 2026-10-07
+
+### Added
+- trace-backed downgrade signals — closure reason + subagent budget exhaustion (#3195) (b3f82314)
+
+### Changed
+- add unit tests for three worst-coverage CLI/service modules (COV-007..009) (#3203) (a5903f52)
+- remove buildPromptAsync internal deprecated shim (#3196) (80b8167e)
+
 ## [5.303.2] - 2026-10-07
 
 ### Added
