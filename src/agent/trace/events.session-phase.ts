@@ -113,6 +113,11 @@ export const SessionPhaseNameSchema = z.enum([
   'connection_failure',
   'connection_recovered',
   'connection_budget_exhausted',
+  // In-turn context guard and catalog model awareness. Must mirror the
+  // SessionPhaseName union in types.session-phase.ts; session-phase.test.ts
+  // parity enforces it.
+  'context_pressure_wind_down',
+  'catalog_model_upgrade',
 ]);
 
 export const SessionPhasePayloadSchema = z.object({
