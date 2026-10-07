@@ -11,6 +11,18 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.303.0] - 2026-10-07
+
+### Added
+- opt-in elapsed-time connection retry budget + connect-failure diagnostics (#3173) (c605e2b2)
+- explicit incomplete handoff and findings salvage at the tool-round cap (#3176) (5e15142c)
+
+### Fixed
+- address advisory review findings from 2026-10-06 pr-triage (#3175) (22971afa)
+
+### Changed
+- add unit tests for three worst-coverage CLI/service modules (#3178) (92e7f89b)
+
 ## [5.302.13] - 2026-10-07
 
 ### Fixed
