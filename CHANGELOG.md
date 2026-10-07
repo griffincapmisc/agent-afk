@@ -11,6 +11,12 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.303.6] - 2026-10-07
+
+### Fixed
+- read vision/reasoning/context from the Codex catalog so gpt-6 models see pasted images (#3188) (c240ca37)
+- count patch_apply as file write, bash external effects corroboration, move version history (#3191) (edc66634)
+
 ## [5.303.5] - 2026-10-07
 
 ### Fixed
