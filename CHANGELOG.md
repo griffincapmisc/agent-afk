@@ -11,6 +11,25 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.303.9] - 2026-10-07
+
+### Fixed
+- reference RAW_VALUE_CAP in inbound-mode boundary tests (#3219) (1ec88e05)
+- tighten EgressBlockedError assertions in egress lookup tests (#3221) (47b48886)
+- address advisory review findings for tool-health monitor and daemon builtin (#3135) (f1057945)
+- remove duplicate ToolFailureClassSchema, tighten isContentBlockArray return type (#3133) (d00f99f6)
+- advisory findings from #2770, #2879, #2824 (#3134) (7274f3ae)
+- document internal-only helpers in effect-ledger barrel (#3209) (15ee4fbe)
+- raise engines.node to jsdom 30's floor (#3150) (825d7761)
+- address advisory findings from #2810 peer boundary delivery (#3136) (19c7e3da)
+- address advisory findings from review of #3063 (#3116) (f76fdba2)
+- address advisory findings from review of #3077 (#3097) (ba46e740)
+- remove dead applyPostRunNotices (#3220) (f6e86014)
+- replay reasoning for destination endpoints (#3156) (387daa69)
+- bound Windows bash kill cleanup without blocking (#3210) (e7e07b30)
+- add _renameFn/_platform injectables to atomicWriteFileAsync for portable EPERM retry testing (#3153) (26021cbc)
+- add maxRetries to rm in temp git repo teardowns to avoid ENOTEMPTY (#3208) (53152e90)
+
 ## [5.303.8] - 2026-10-07
 
 ### Fixed
