@@ -167,6 +167,9 @@ function buildStopContext(ctx: BeforeTurnEndContext): StopContext {
   const text = ctx.assistantText ?? lastAssistantText(ctx.messages);
   const terminalKind = parseTerminalState(text)?.kind;
   const isDone = terminalKind === 'done';
+  const successfulToolNames = ctx.toolEvents
+    .filter((e) => !e.isError)
+    .map((e) => e.toolName);
   return {
     event: 'Stop' as const,
     sessionId: ctx.sessionId,
@@ -175,6 +178,8 @@ function buildStopContext(ctx: BeforeTurnEndContext): StopContext {
     ...(isDone ? { doneEvidenceClassification: classifyDoneEvidence(ctx.toolEvents) } : {}),
     ...(ctx.continuation > 0 ? { stopHookActive: true } : {}),
     continuation: ctx.continuation,
+    assistantText: text,
+    successfulToolNames,
   };
 }
 
