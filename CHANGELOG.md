@@ -11,6 +11,27 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.304.0] - 2026-10-08
+
+### Added
+- make fact tracking and soft-delete GC safe per archive (#3211) (5ffb7f4f)
+
+### Fixed
+- address advisory findings from #2854 (Fable 5.1 support) (#3148) (4ad89fee)
+
+### Changed
+- bump the fumadocs group in /website with 3 updates (#3229) (ab12fef1)
+- bump @testing-library/jest-dom in /dashboard (#3231) (904d8a6f)
+- bump lucide-react from 0.468.0 to 1.52.0 in /dashboard (#3233) (44fe7df7)
+- bump jsdom from 26.1.0 to 30.1.2 in /dashboard (#3234) (0b916557)
+- bump jsdom (#3232) (f6b82938)
+- bump commander from 12.1.0 to 15.0.0 (#3235) (c5f7c4ff)
+- bump undici from 7.30.0 to 8.11.2 (#3238) (c4dae640)
+- bump softprops/action-gh-release from 2 to 3 (#3225) (e01e6735)
+- bump actions/upload-artifact from 4 to 6 (#3226) (da3c889d)
+- bump actions/setup-node from 4 to 7 (#3227) (a029e391)
+- bump actions/checkout from 4 to 7 (#3224) (94534ea2)
+
 ## [5.303.10] - 2026-10-07
 
 ### Fixed
