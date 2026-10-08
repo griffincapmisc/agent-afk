@@ -11,6 +11,16 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.305.8] - 2026-10-08
+
+### Fixed
+- add mid-session endpoint switch tests for reasoning replay (#3309) (6827c08e)
+- apply advisory findings from 2026-10-08 pr-triage (#3296) (08175418)
+
+### Changed
+- add wiring regression tests for PreToolUse injectContext delivery (#3308) (b78b8c69)
+- add router anthropic/xai branches and model_complete path-approval once/subagent cases (#3294) (ebedf10c)
+
 ## [5.305.7] - 2026-10-08
 
 ### Fixed
