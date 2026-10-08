@@ -11,6 +11,15 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.305.0] - 2026-10-08
+
+### Added
+- add model_complete, a one-shot completion against any configured model (#3254) (1dcf8f26)
+
+### Changed
+- bump @types/node from 26.6.3 to 26.6.4 in /website (#3230) (cfdd9539)
+- bump ora from 8.2.0 to 9.4.1 (#3239) (fb500b1d)
+
 ## [5.304.1] - 2026-10-08
 
 ### Fixed
