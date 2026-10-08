@@ -11,6 +11,13 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.305.1] - 2026-10-08
+
+### Fixed
+- erase ghost spinner and CPR-reanchor on width-only tmux resize (#3228) (0e46a05d)
+- tighten strategy-nudge error-line detection (#3223) (55d06547)
+- cap earlySettled and sanitize toolUseId in detached-tool-notifier (#3222) (fac366f4)
+
 ## [5.305.0] - 2026-10-08
 
 ### Added
