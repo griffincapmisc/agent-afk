@@ -11,6 +11,14 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.305.7] - 2026-10-08
+
+### Fixed
+- address advisory findings from 2026-10-08 /pr-triage (#3295) (b7bda6f0)
+
+### Changed
+- openai-compatible compaction defaults to gpt-6-luna on real OpenAI endpoints (#3288) (481340df)
+
 ## [5.305.6] - 2026-10-08
 
 ### Fixed
