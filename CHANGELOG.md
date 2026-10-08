@@ -11,6 +11,11 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.304.1] - 2026-10-08
+
+### Fixed
+- regenerate pnpm-lock.yaml broken by sequential dependabot merges (#3253) (bb91c807)
+
 ## [5.304.0] - 2026-10-08
 
 ### Added
