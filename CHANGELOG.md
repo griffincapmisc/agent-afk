@@ -11,6 +11,21 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.305.4] - 2026-10-08
+
+### Added
+- support Claude Haiku 5.5 and point haiku alias at it (#3280) (a776f1c2)
+
+### Fixed
+- report prompt counts in /compact, not inflated raw message counts (#3132) (9bfd8411)
+- apply advisory findings from 2026-09-30 pr-triage (#3137) (e127727b)
+- wire ownerStartTime pid-reuse check and unify parentSessionId spread (#3118) (6f1f2f6f)
+- document TOCTOU window, normalize notifyOn comparison, assert store isolation in shell tests (#3117) (5d12437a)
+- keep enabled thinking on opus-4-6, mute SDK deprecation warning (#3279) (b949763d)
+
+### Changed
+- bump typescript from 5.9.3 to 6.0.3 (#3236) (ff81872e)
+
 ## [5.305.3] - 2026-10-08
 
 ### Fixed
