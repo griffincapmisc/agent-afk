@@ -11,6 +11,15 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.305.6] - 2026-10-08
+
+### Fixed
+- tidy three comment nits in mascot.ts and mascot-mini.ts (#3115) (8cd25714)
+- replace fixed sleep with vi.waitFor in heartbeat test (#3285) (eafc8118)
+- accept collapsed-frame marker as Python traceback predecessor (#3287) (8883a81a)
+- guard CPR late-reply leak + adaptive timeout (#3240) (a25d355b)
+- prefer timeoutSignal.aborted over caller signal when both fire (#3286) (2d66cbc2)
+
 ## [5.305.5] - 2026-10-08
 
 ### Fixed
