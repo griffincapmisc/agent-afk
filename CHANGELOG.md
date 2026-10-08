@@ -11,6 +11,14 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.305.2] - 2026-10-08
+
+### Fixed
+- move isNewerVersion to update-version.ts; fix prerelease compare in afk update (#3271) (4aaa2ea5)
+- share buildWhatifRunOptions between CLI and slash; forward operatorPredictions (#3274) (46537334)
+- reject chatgpt-oauth in image_edit; extract makeSessionCounter (#3273) (251ff682)
+- treat null-equivalent Deferred values as empty (none/n/a/-) (#3237) (8d7e5064)
+
 ## [5.305.1] - 2026-10-08
 
 ### Fixed
