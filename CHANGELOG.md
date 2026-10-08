@@ -11,6 +11,13 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.305.3] - 2026-10-08
+
+### Fixed
+- share sweep-policy resolver; /worktree prune now honors config and env age limits (#3272) (e2d8f13f)
+- advisory findings from Cerebras support PRs (#2788, #2789, #2790, #2793) (#3138) (9e09cc86)
+- validate text minLength/maxLength in Telegram elicitation handler (#3275) (3d9cf10e)
+
 ## [5.305.2] - 2026-10-08
 
 ### Fixed
