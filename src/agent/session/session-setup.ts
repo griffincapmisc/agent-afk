@@ -13,6 +13,7 @@ import { sweepWitnessTree, WITNESS_SWEEP_START_DELAY_MS } from '../witness-sweep
 import { sweepSessionSidecars, SESSION_SIDECAR_SWEEP_START_DELAY_MS } from '../session-sidecar-sweep.js';
 import { sweepMemoryGc, MEMORY_GC_SWEEP_START_DELAY_MS } from '../memory/memory-gc-sweep.js';
 import { debugLog } from '../../utils/debug.js';
+import { loadJournalMessages } from '../journal/index.js';
 import type {
   AgentConfig,
   SessionIdentity,
@@ -75,6 +76,43 @@ export function buildInitialState(
   };
 
   return { sessionIdentity, metadata };
+}
+
+/**
+ * Contract: when an SDK consumer passes `resume` (or `sessionId`) but omits
+ * `resumeMessages` and `resumeHistory`, auto-load the on-disk message journal
+ * so the resumed conversation sees its prior context — matching the behaviour
+ * the CLI achieves via `resumeConfigFor()`.
+ *
+ * Guards:
+ *   - Already-explicit `resumeMessages` wins (no double-load; CLI path is safe).
+ *   - `persistSession: false` opts out (caller does not want disk state).
+ *   - `isMessageJournalDisabled()` (`AFK_MESSAGE_JOURNAL_DISABLED=1`) is a no-op.
+ *   - Fork configs (`isSubagentFork` / `parentSessionId`) are never seeded here;
+ *     they rehydrate from the parent's in-memory journal via `JournalSync`.
+ *   - When the journal is absent or empty, the config is returned unchanged so
+ *     the caller falls through to the existing `resumeHistory` path.
+ *
+ * The resolved id priority mirrors the CLI: `resume` > `sessionId`.
+ * `continue` is not handled here (it requires a session-store lookup that the
+ * CLI owns; SDK callers that want `--continue` semantics should resolve the id
+ * themselves and pass it as `resume`).
+ */
+export function seedResumeMessages(config: AgentConfig): AgentConfig {
+  // Already have full-fidelity messages — nothing to do.
+  if (config.resumeMessages !== undefined) return config;
+  // Caller opted out of disk persistence.
+  if (config.persistSession === false) return config;
+  // Fork sessions rehydrate from the parent provider's in-memory journal.
+  if (config.isSubagentFork === true || config.parentSessionId !== undefined) return config;
+  // Resolve the target session id: `resume` takes precedence over `sessionId`.
+  const targetId = config.resume ?? config.sessionId;
+  if (!targetId) return config;
+  // loadJournalMessages already checks isMessageJournalDisabled() and returns
+  // null when absent, disabled, or empty — so this is always a safe no-op.
+  const messages = loadJournalMessages(targetId);
+  if (!messages) return config;
+  return { ...config, resumeMessages: messages };
 }
 
 /**
