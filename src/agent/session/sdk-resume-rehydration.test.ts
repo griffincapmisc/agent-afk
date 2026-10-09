@@ -13,13 +13,17 @@
  *   6. Fork configs (`isSubagentFork` / `parentSessionId`) are not auto-seeded.
  *   7. `sessionId` alone (without `resume`) does NOT trigger the load.
  *   8. Explicit `resumeHistory` wins over the auto-load.
+ *   9. A corrupt journal the reader accepts but cannot hydrate (nested
+ *      `tool_result.content: [null]`) does not throw from the constructor.
  */
+import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { AgentSession } from './agent-session.js';
 import { createMockProvider } from '../__fixtures__/mock-provider.js';
 import { createMessageJournal, loadJournalMessages } from '../journal/index.js';
 import { useTmpAfkHome, user, assistant } from '../journal/__test-utils__/helpers.js';
 import type { AgentConfig } from '../types.js';
+import { getSessionJournalPath, getSessionLedgerDir } from '../../paths.js';
 
 useTmpAfkHome();
 
@@ -206,6 +210,33 @@ describe('SDK resume rehydration via journal', () => {
     await session.waitForInitialization();
     expect(configs[0]).not.toHaveProperty('resumeMessages');
     await session.close();
+  });
+
+  it('corrupt nested tool_result content does not throw from the constructor', async () => {
+    const sid = 'sdk-resume-corrupt-nested';
+    // Valid JSON, valid version and record shape: `isBlock` accepts a
+    // tool_result whose content is an array, but `hydratePart(null)` throws.
+    const corrupt = {
+      v: 1,
+      ts: 1,
+      kind: 'append',
+      index: 0,
+      message: { role: 'user', content: [{ type: 'tool_result', toolUseId: 'tu-1', content: [null] }] },
+    };
+    fs.mkdirSync(getSessionLedgerDir(sid), { recursive: true });
+    fs.writeFileSync(getSessionJournalPath(sid), `${JSON.stringify(corrupt)}\n`);
+    // Precondition: the reader itself throws on this journal, so the test
+    // exercises the constructor-side boundary rather than a tolerant reader.
+    expect(() => loadJournalMessages(sid)).toThrow();
+
+    const { provider, configs } = capturingProvider(sid);
+    let session: AgentSession | undefined;
+    expect(() => {
+      session = new AgentSession({ model: 'sonnet', provider, resume: sid, sessionId: sid });
+    }).not.toThrow();
+    await session!.waitForInitialization();
+    expect(configs[0]).not.toHaveProperty('resumeMessages');
+    await session!.close();
   });
 
   it('journal is still present on disk after auto-seeded resume (not consumed/deleted)', async () => {

@@ -13,6 +13,7 @@ import { sweepWitnessTree, WITNESS_SWEEP_START_DELAY_MS } from '../witness-sweep
 import { sweepSessionSidecars, SESSION_SIDECAR_SWEEP_START_DELAY_MS } from '../session-sidecar-sweep.js';
 import { sweepMemoryGc, MEMORY_GC_SWEEP_START_DELAY_MS } from '../memory/memory-gc-sweep.js';
 import { debugLog } from '../../utils/debug.js';
+import { errorMessage } from '../../utils/errors.js';
 import { loadJournalMessages } from '../journal/index.js';
 import type {
   AgentConfig,
@@ -96,6 +97,12 @@ export function buildInitialState(
  *     they rehydrate from the parent's in-memory journal via `JournalSync`.
  *   - When the journal is absent or empty, the config is returned unchanged so
  *     the caller falls through to the existing `resumeHistory` path.
+ *   - When the journal is corrupt in a way the reader does not tolerate (e.g. a
+ *     well-formed append record whose `tool_result.content` holds `null`, which
+ *     passes `isBlock` but throws in `hydratePart`), the load error is logged and
+ *     the config is returned unchanged. This runs inside the `AgentSession`
+ *     constructor, so an escaped throw would fail construction before any
+ *     provider exists; a corrupt journal must degrade to "no prior context".
  *
  * `continue` is not handled here (it requires a session-store lookup that the
  * CLI owns; SDK callers that want `--continue` semantics should resolve the id
@@ -113,9 +120,16 @@ export function seedResumeMessages(config: AgentConfig): AgentConfig {
   // Only an explicit `resume` requests rehydration.
   const targetId = config.resume;
   if (!targetId) return config;
-  // loadJournalMessages already checks isMessageJournalDisabled() and returns
-  // null when absent, disabled, or empty — so this is always a safe no-op.
-  const messages = loadJournalMessages(targetId);
+  // loadJournalMessages checks isMessageJournalDisabled() and returns null when
+  // absent, disabled, or empty. It can still throw on accepted-but-malformed
+  // nested records, so the boundary below keeps construction non-throwing.
+  let messages: ReturnType<typeof loadJournalMessages>;
+  try {
+    messages = loadJournalMessages(targetId);
+  } catch (err) {
+    debugLog(`[session-setup] resume journal load failed for ${targetId}; continuing without prior context: ${errorMessage(err)}`);
+    return config;
+  }
   if (!messages) return config;
   return { ...config, resumeMessages: messages };
 }
