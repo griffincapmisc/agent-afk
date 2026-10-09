@@ -11,6 +11,11 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.306.4] - 2026-10-09
+
+### Fixed
+- block restricted paths in bash on headless surfaces (#2312) (9becef0b)
+
 ## [5.306.3] - 2026-10-08
 
 ### Changed
