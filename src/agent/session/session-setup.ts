@@ -79,13 +79,17 @@ export function buildInitialState(
 }
 
 /**
- * Contract: when an SDK consumer passes `resume` (or `sessionId`) but omits
- * `resumeMessages` and `resumeHistory`, auto-load the on-disk message journal
+ * Contract: when an SDK consumer passes `resume` but omits `resumeMessages`
+ * and `resumeHistory`, auto-load the on-disk message journal
  * so the resumed conversation sees its prior context — matching the behaviour
  * the CLI achieves via `resumeConfigFor()`.
  *
  * Guards:
  *   - Already-explicit `resumeMessages` wins (no double-load; CLI path is safe).
+ *   - Explicit `resumeHistory` wins: the caller supplied its own context.
+ *   - `sessionId` alone never triggers a load: only `resume` expresses intent
+ *     to continue a prior conversation (callers pass `sessionId` to name a
+ *     session, e.g. the Telegram lifecycle, without asking for rehydration).
  *   - `persistSession: false` opts out (caller does not want disk state).
  *   - `isMessageJournalDisabled()` (`AFK_MESSAGE_JOURNAL_DISABLED=1`) is a no-op.
  *   - Fork configs (`isSubagentFork` / `parentSessionId`) are never seeded here;
@@ -93,7 +97,6 @@ export function buildInitialState(
  *   - When the journal is absent or empty, the config is returned unchanged so
  *     the caller falls through to the existing `resumeHistory` path.
  *
- * The resolved id priority mirrors the CLI: `resume` > `sessionId`.
  * `continue` is not handled here (it requires a session-store lookup that the
  * CLI owns; SDK callers that want `--continue` semantics should resolve the id
  * themselves and pass it as `resume`).
@@ -101,12 +104,14 @@ export function buildInitialState(
 export function seedResumeMessages(config: AgentConfig): AgentConfig {
   // Already have full-fidelity messages — nothing to do.
   if (config.resumeMessages !== undefined) return config;
+  // Caller supplied its own text history; do not override it with the journal.
+  if (config.resumeHistory !== undefined) return config;
   // Caller opted out of disk persistence.
   if (config.persistSession === false) return config;
   // Fork sessions rehydrate from the parent provider's in-memory journal.
   if (config.isSubagentFork === true || config.parentSessionId !== undefined) return config;
-  // Resolve the target session id: `resume` takes precedence over `sessionId`.
-  const targetId = config.resume ?? config.sessionId;
+  // Only an explicit `resume` requests rehydration.
+  const targetId = config.resume;
   if (!targetId) return config;
   // loadJournalMessages already checks isMessageJournalDisabled() and returns
   // null when absent, disabled, or empty — so this is always a safe no-op.

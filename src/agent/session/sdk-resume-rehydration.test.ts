@@ -1,8 +1,7 @@
 /**
  * SDK resume rehydration via journal (feat/sdk-resume-rehydrates-journal).
  *
- * Contract: when `AgentSession` is constructed with `resume` (or `sessionId`)
- * and no explicit `resumeMessages`/`resumeHistory`, the on-disk message journal
+ * Contract: when `AgentSession` is constructed with `resume` and no explicit `resumeMessages`/`resumeHistory`, the on-disk message journal
  * is loaded automatically — matching the CLI's `resumeConfigFor()` behaviour.
  *
  * Guards verified here:
@@ -12,7 +11,8 @@
  *   4. `persistSession: false` opts out of the auto-load.
  *   5. `AFK_MESSAGE_JOURNAL_DISABLED=1` is a no-op.
  *   6. Fork configs (`isSubagentFork` / `parentSessionId`) are not auto-seeded.
- *   7. `sessionId` alone (without `resume`) also triggers the load.
+ *   7. `sessionId` alone (without `resume`) does NOT trigger the load.
+ *   8. Explicit `resumeHistory` wins over the auto-load.
  */
 import { describe, expect, it } from 'vitest';
 import { AgentSession } from './agent-session.js';
@@ -76,7 +76,7 @@ describe('SDK resume rehydration via journal', () => {
     await session.close();
   });
 
-  it('auto-seeds resumeMessages when sessionId alone is set (no explicit resume)', async () => {
+  it('does not auto-seed when sessionId alone is set (no explicit resume)', async () => {
     const sid = 'sdk-resume-sessionid-only';
     await seedJournal(sid);
 
@@ -88,9 +88,27 @@ describe('SDK resume rehydration via journal', () => {
     });
     await session.waitForInitialization();
 
-    const seeded = configs[0]?.resumeMessages;
-    expect(seeded).toBeDefined();
-    expect(seeded).toEqual([user('prior user message'), assistant('prior assistant reply')]);
+    expect(configs[0]).not.toHaveProperty('resumeMessages');
+    await session.close();
+  });
+
+  it('explicit resumeHistory wins over the auto-load', async () => {
+    const sid = 'sdk-resume-history-wins';
+    await seedJournal(sid);
+
+    const { provider, configs } = capturingProvider(sid);
+    const history = [{ user: 'caller user turn', assistant: 'caller assistant turn' }];
+    const session = new AgentSession({
+      model: 'sonnet',
+      provider,
+      resume: sid,
+      sessionId: sid,
+      resumeHistory: history,
+    });
+    await session.waitForInitialization();
+
+    expect(configs[0]).not.toHaveProperty('resumeMessages');
+    expect(configs[0]?.resumeHistory).toEqual(history);
     await session.close();
   });
 
