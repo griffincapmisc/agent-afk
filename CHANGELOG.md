@@ -11,6 +11,14 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.307.2] - 2026-10-09
+
+### Added
+- push wave-resume offers to Telegram from daemon; include in-flight tasks in crash notices (#3323) (50ed2aa7)
+
+### Changed
+- add json-file + pathExists helpers, migrate 13 call sites (#3329) (1c7cb9e7)
+
 ## [5.307.1] - 2026-10-09
 
 ### Added
