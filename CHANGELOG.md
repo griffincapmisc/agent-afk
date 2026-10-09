@@ -11,6 +11,21 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.307.0] - 2026-10-09
+
+### Added
+- add OverlapAlertLatch — one Telegram alert per overlap episode (#3326) (7b90c16b)
+- aggregate subagent outcomes by model, type and depth and surface in get_runtime_state (#3328) (43540bc2)
+
+### Fixed
+- address CPR late-reply advisory findings from #3240 review (#3314) (6a932100)
+- harvest flags from flat-installed plugin roots (#3333) (849c625a)
+- address advisory findings from 2026-10-08 /pr-triage (#3294–#3309) (#3325) (3b3ab7b5)
+
+### Changed
+- split system prompt into stable cached prefix and volatile env tail (#3322) (a7202c80)
+- shared JSONL helpers and bounded schedule-telemetry reader (#3327) (2edd291f)
+
 ## [5.306.4] - 2026-10-09
 
 ### Fixed
