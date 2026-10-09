@@ -11,6 +11,15 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.307.6] - 2026-10-09
+
+### Fixed
+- post-merge hardening for #3326 #3327 #3329 #3336 (budget-gate stub, short-read loop, json-file tests, dispatcher restore) (#3356) (a928fb93)
+
+### Changed
+- adopt errorMessage/ensureError/isErrnoCode and add execFileAsync helper (#3354) (ecd33f7e)
+- repro test suite for committed-band hole after pane resize (#3360) (77562805)
+
 ## [5.307.5] - 2026-10-09
 
 ### Fixed
