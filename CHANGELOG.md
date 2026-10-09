@@ -11,6 +11,11 @@ auto-release workflow to deduplicate commits across successive runs.
 
 ## [Unreleased]
 
+## [5.307.5] - 2026-10-09
+
+### Fixed
+- adapt afk defects to LedgerReadResult (main tsc break) (#3367) (152a709c)
+
 ## [5.307.4] - 2026-10-09
 
 ### Added
