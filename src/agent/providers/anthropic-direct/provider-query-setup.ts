@@ -190,7 +190,7 @@ export function setUpQuerySession(
     // #4060: the section tells the model to call workspace_publish/query, so it
     // also needs both tools granted, not just a store.
     workspaceEnabled: ctx.workspaceStore !== undefined
-      && grantsWorkspacePrompt((toolName) => ctx.grantsTool?.(toolName) ?? true),
+      && grantsWorkspacePrompt((toolName) => grantsToolStrict(ctx.grantsTool, toolName)),
     // Pass the executor (not just a boolean) so assembleQueryPrompt can call
     // getManifestScope() for plugin/allowlist scoping. The truthiness gate is
     // preserved: manifest is built iff skillExecutor is truthy (same invariant
