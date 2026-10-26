@@ -683,6 +683,68 @@ describe('normalizeErrorHead — digit run normalization', () => {
   });
 });
 
+describe('normalizeErrorHead — over-collapse fixes (issue #4401)', () => {
+  it('does not collapse contraction apostrophes (can\'t, it\'s)', () => {
+    expect(normalizeErrorHead("can't open file, it's locked")).toBe(
+      "can't open file, it's locked",
+    );
+  });
+
+  it('does not collapse and/or as a path', () => {
+    expect(normalizeErrorHead('read and/or write failed')).toBe('read and/or write failed');
+  });
+
+  it('collapses a full URL before the path pass', () => {
+    expect(normalizeErrorHead('fetch https://example.com/a/b failed')).toBe(
+      'fetch <url> failed',
+    );
+  });
+
+  it('collapses http:// URLs too', () => {
+    expect(normalizeErrorHead('request to http://api.host/v1/endpoint timed out')).toBe(
+      'request to <url> timed out',
+    );
+  });
+
+  it('still collapses a leading absolute path', () => {
+    expect(normalizeErrorHead('ENOENT: /Users/alice/foo.ts not found')).toBe(
+      'ENOENT: <path> not found',
+    );
+  });
+
+  it('collapses compound durations like 2m30s', () => {
+    expect(normalizeErrorHead('timed out after 2m30s')).toBe('timed out after <dur>');
+  });
+
+  it('collapses compound durations like 1m05s', () => {
+    expect(normalizeErrorHead('elapsed 1m05s exceeded limit')).toBe(
+      'elapsed <dur> exceeded limit',
+    );
+  });
+
+  it('two compound-duration timeouts land in the same cluster', () => {
+    const a = normalizeErrorHead('Tool timed out after 2m30s');
+    const b = normalizeErrorHead('Tool timed out after 1m05s');
+    expect(a).toBe(b);
+  });
+
+  it('collapses single-quoted values at word boundaries', () => {
+    expect(normalizeErrorHead("Cannot find module 'some/path'")).toBe(
+      'Cannot find module <val>',
+    );
+  });
+
+  it('does not collapse mid-word apostrophes as single-quoted values', () => {
+    const result = normalizeErrorHead("the system can't open the file");
+    expect(result).not.toContain('<val>');
+    expect(result).toBe("the system can't open the file");
+  });
+
+  it('collapses single-quoted values preceded by colon (error:\'value\' pattern)', () => {
+    expect(normalizeErrorHead("error:'some-dynamic-value'")).toBe('error:<val>');
+  });
+});
+
 describe('normalizeErrorHead — combined / idempotent', () => {
   it('applies all transformations together', () => {
     const raw =
