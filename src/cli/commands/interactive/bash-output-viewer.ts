@@ -205,6 +205,7 @@ export function runBashOutputViewer(
       host.enterPickerMode({
         renderRows: () => errRows,
         onKey: () => { if (!done) { done = true; if (signal) signal.removeEventListener('abort', onAbort); host.exitPickerMode(); resolve(); } },
+        skipBandTruncation: true,
       });
       return;
     }
@@ -321,6 +322,6 @@ export function runBashOutputViewer(
       if (char === 'N') { state = prevMatch(state); host.repaintPicker(); return; }
     };
 
-    host.enterPickerMode({ renderRows, onKey });
+    host.enterPickerMode({ renderRows, onKey, skipBandTruncation: true });
   });
 }
