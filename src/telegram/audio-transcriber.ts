@@ -166,8 +166,7 @@ const DEFAULT_WHISPER_MODEL = 'whisper-1';
  * Reads env vars at call time so tests can stub `process.env` without module
  * re-loading.  Only `AFK_TRANSCRIBE_API_URL` is required; the key and model
  * have defaults.
- */
-/**
+ *
  * @param opts.checkEgress  SSRF egress-check function injected by the caller.
  *   When omitted (default `{}`), the SSRF guard is disabled and any URL
  *   (including private/loopback/cloud-metadata hosts) will be fetched.
