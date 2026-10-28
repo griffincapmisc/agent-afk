@@ -2951,6 +2951,7 @@ describe('SubagentExecutor', () => {
         parentSession: mockParentSession as any,
         defaultConfig: mockConfig,
         childProviderFactory: factory,
+        defaultSubagentModel: 'sonnet',
         depth: 0,
         maxDepth: DEFAULT_MAX_NESTING_DEPTH,
       });
