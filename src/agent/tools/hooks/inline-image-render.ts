@@ -23,6 +23,7 @@
  */
 
 import * as fs from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { env } from '../../../config/env.js';
@@ -187,7 +188,7 @@ export async function renderInlineImage(opts: RenderInlineImageOptions): Promise
   // process.cwd() so the gate tracks the agent's workspace, not the process's.
   const resolved = path.resolve(filePath);
   const allowedPrefixes = [
-    path.resolve(os.tmpdir()) + path.sep,
+    realpathSync.native(os.tmpdir()) + path.sep,
     path.resolve(agentCwd ?? process.cwd()) + path.sep,
   ];
   const isAllowed = allowedPrefixes.some((prefix) => resolved.startsWith(prefix));
@@ -232,7 +233,9 @@ export async function renderInlineImage(opts: RenderInlineImageOptions): Promise
       return;
     }
   } catch {
-    // stat failed — fall through to readFile which will fail and log the path
+    // stat failed (ENOENT, EACCES, ELOOP, etc.) — do not proceed to readFile,
+    // which would bypass the isFile() and size-cap guards above.
+    return;
   }
 
   // Read the image bytes.
