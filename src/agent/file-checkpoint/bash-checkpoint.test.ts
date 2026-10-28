@@ -248,6 +248,7 @@ describe('bash checkpoint hook', () => {
       .mockResolvedValueOnce({ ok: true, repoRoot: root, tree: 'before' })
       .mockResolvedValueOnce({ ok: true, repoRoot: otherRoot, tree: 'after' });
     await runClose(0);
+    expect(captureWorkspaceTree).toHaveBeenCalledTimes(2);
     expect(diffTrees).not.toHaveBeenCalled();
     expect(outcome()).toEqual([expect.objectContaining({ status: 'skipped', reason: 'repository changed' })]);
   });
@@ -275,7 +276,7 @@ describe('bash checkpoint hook', () => {
     const allBash = readTurnLog('session', root).filter((e) => e.kind === 'bash');
     expect(allBash).toEqual([
       expect.objectContaining({ status: 'skipped', reason: 'timeout' }),
-      expect.objectContaining({ status: 'skipped', reason: expect.stringContaining('timeout') }),
+      expect.objectContaining({ status: 'skipped', reason: 'timeout (capture disabled for this session after a slow first snapshot)' }),
     ]);
   });
 
