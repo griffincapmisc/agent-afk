@@ -144,8 +144,9 @@ export interface RegisterArgs {
    *   - `'model'`            — dispatched by the model via the `agent` tool;
    *                            the model may steer and cancel it.
    *   - `'user-backgrounded'`— a foreground job the user promoted to background
-   *                            (Ctrl+B); treated like a user job for steering/
-   *                            cancel purposes but distinguished in telemetry.
+   *                            (Ctrl+B); model cancellation is restricted, but
+   *                            model steering is still permitted since the model
+   *                            originated the job. Distinguished in telemetry.
    *   - `'user'`             — initiated directly by the user (or unspecified).
    *
    * **Fail-safe default:** when `provenance` is omitted the registry falls back
@@ -315,8 +316,8 @@ export class BackgroundAgentRegistry extends EventEmitter<BackgroundRegistryEven
    * **Provenance fail-safe**: identical to {@link register} — omitting
    * `args.provenance` defaults to `'user'`, which prevents the model from
    * steering or cancelling the adopted job. For Ctrl+B promotions the caller
-   * passes `'user-backgrounded'` to distinguish telemetry while preserving the
-   * same model-proof restriction.
+   * passes `'user-backgrounded'` to distinguish telemetry; this prevents model
+   * cancellation but permits model steering.
    *
    * @throws {BackgroundJobCapError} when the running-job cap is reached. The
    *   caller (executor) should fall back to awaiting the foreground run rather
