@@ -11,29 +11,6 @@ Entries in the [Unreleased] section may include a short commit hash suffix
 
 ## [Unreleased]
 
-## [5.339.0] - 2026-10-28
-
-### Added
-- capture bash side effects so /rewind can undo them (#4271 stage 2) (c08d69130)
-
-### Fixed
-- skip band-width truncation for editable text-input overlays (f5c9f9258)
-- replace console.error with debugLog in session-meta to fix flaky teardown (#4459) (9e78cd651)
-- add per-fragment token-count logging at prompt assembly time (05c65bdbd)
-- restore parentCwd fallback for grandchild read roots (cf9b511fb)
-- forward riskCategory through HookBlockedError on BLOCK path (312f5d323)
-- harden git snapshot capture per review (#4271 stage 2) (40075cff5)
-- strip credential env vars from snapshot git subprocesses (ec60aca6b)
-- split diff-tree buffer on NUL bytes before UTF-8 decode (5820ed665)
-- migrate remaining consumers to session-meta.json sidecar (#4453) (26f3128dd)
-- wire release-boundary-detect into shared RiskCategory enum (8caa47f0d)
-- address remaining advisory findings from Oct 14 triage (43e6b1633)
-- shared deadline in finish(), guard standing warning (c948daba2)
-
-### Changed
-- unify fork read-scope computation (83cc8c4aa)
-- git-snapshot contract for bash capture (#4271 stage 2) (3c8e2e916)
-
 ## [5.338.1] - 2026-10-26
 
 ### Fixed

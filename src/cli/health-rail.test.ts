@@ -175,11 +175,12 @@ describe('HealthRail subagent counts', () => {
   });
 
   it('counts running background processes', () => {
-    // Mock uses runningCount() + startedCount() — the interface update()
-    // now calls. (Issue #4395, finding #1.)
     const mockProcJobs = {
-      runningCount: () => 2,
-      startedCount: () => 3,
+      list: () => [
+        { status: 'running' },
+        { status: 'running' },
+        { status: 'completed' },
+      ],
     };
     const rail = new HealthRail({
       getExtraRows,
@@ -191,15 +192,19 @@ describe('HealthRail subagent counts', () => {
   });
 
   it('ratchets process total upward when registry prunes history', () => {
-    // Simulate pruning: startedCount() is always 3 (monotonic counter),
-    // but runningCount() shrinks after the second update. (Issue #4395, finding #1.)
     let callCount = 0;
     const mockProcJobs = {
-      runningCount: () => (callCount === 1 ? 1 : 1),
-      startedCount: () => {
+      list: () => {
         callCount++;
-        // First call: 3 started; second call: still 3 (monotonic).
-        return 3;
+        if (callCount === 1) {
+          return [
+            { status: 'running' },
+            { status: 'completed' },
+            { status: 'completed' },
+          ];
+        }
+        // Pruned: only running job remains
+        return [{ status: 'running' }];
       },
     };
     const rail = new HealthRail({
@@ -207,7 +212,7 @@ describe('HealthRail subagent counts', () => {
       processJobs: mockProcJobs as unknown as import('../agent/shell-jobs/process-jobs.js').ProcessJobRegistry,
     });
     rail.update(makeStats()); // totalProcsEver = 3
-    rail.update(makeStats()); // startedCount still 3, ratchet stays 3
+    rail.update(makeStats()); // list returns 1, but ratchet stays 3
     expect(getSnapshot(rail)?.totalProcs).toBe(3);
   });
 
