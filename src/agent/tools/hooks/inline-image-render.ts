@@ -9,7 +9,7 @@
  *
  * - **Kitty graphics protocol** (APC `\x1b_G…\x1b\\`): supported by kitty,
  *   Ghostty, and WezTerm. Images are base64-encoded and chunked into ≤4096-byte
- *   payloads per the spec.
+ *   payloads per the spec. PNG only (f=100).
  * - **iTerm2 inline images protocol** (OSC 1337): supported by iTerm2 and a
  *   handful of iTerm2-compatible terminals (e.g. Hyper with the right plugin).
  * - **Fallback**: prints the file path only — the pre-#2143 behaviour.
@@ -23,8 +23,11 @@
  */
 
 import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import { env } from '../../../config/env.js';
 import { palette } from '../../../cli/palette.js';
+import { sanitizeForDisplay } from '../../../utils/terminal-sanitize.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -32,6 +35,23 @@ import { palette } from '../../../cli/palette.js';
 
 /** Maximum chunk size (bytes of base64 text) per Kitty APC packet. */
 const KITTY_CHUNK_SIZE = 4096;
+
+/** Maximum file size rendered inline; larger files fall back to path log. */
+const MAX_INLINE_IMAGE_BYTES = 2 * 1024 * 1024;
+
+// ---------------------------------------------------------------------------
+// EPIPE guard
+// ---------------------------------------------------------------------------
+
+let _stdoutErrorGuardInstalled = false;
+
+function ensureStdoutErrorGuard(): void {
+  if (_stdoutErrorGuardInstalled) return;
+  _stdoutErrorGuardInstalled = true;
+  process.stdout.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code !== 'EPIPE') throw err;
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Terminal detection
@@ -82,10 +102,11 @@ export function detectTerminalProtocol(): TerminalProtocol {
 /**
  * Emit a Kitty APC graphics sequence to render `imageB64` inline.
  *
- * The payload is chunked into `KITTY_CHUNK_SIZE`-byte slices. The first chunk
- * carries `a=T` (transmit + display), `f=100` (PNG), `m=1` (more chunks
- * follow). Intermediate chunks carry `m=1`; the final chunk carries `m=0`.
- * When the whole image fits in one chunk, a single packet with `m=0` is sent.
+ * PNG only (f=100). The payload is chunked into `KITTY_CHUNK_SIZE`-byte
+ * slices. The first chunk carries `a=T` (transmit + display), `f=100` (PNG),
+ * `m=1` (more chunks follow). Intermediate chunks carry `m=1`; the final
+ * chunk carries `m=0`. When the whole image fits in one chunk, a single
+ * packet with `m=0` is sent.
  *
  * Writes directly to `process.stdout` so the escape sequence lands on the raw
  * terminal before any readline/ink rendering pass can interfere.
@@ -154,31 +175,69 @@ export async function renderInlineImage(opts: RenderInlineImageOptions): Promise
     return;
   }
 
+  // Install EPIPE guard so a broken pipe on stdout does not throw.
+  ensureStdoutErrorGuard();
+
+  // Validate path: must resolve to within tmpdir or cwd (security gate).
+  const resolved = path.resolve(filePath);
+  const allowedPrefixes = [
+    path.resolve(os.tmpdir()) + path.sep,
+    path.resolve(process.cwd()) + path.sep,
+  ];
+  const isAllowed = allowedPrefixes.some((prefix) => resolved.startsWith(prefix));
+  if (!isAllowed) {
+    process.stdout.write(
+      `${palette.fileRef(sanitizeForDisplay(filePath))}  ${palette.meta(`(${toolName} — path outside allowed directories)`)}\n`,
+    );
+    return;
+  }
+
   const protocol = detectTerminalProtocol();
 
   // On unsupported terminals just print the path — that is the pre-#2143
   // behaviour and avoids polluting non-graphical terminals with garbage bytes.
   if (protocol === 'none') {
     process.stdout.write(
-      `${palette.fileRef(filePath)}  ${palette.meta(`(${toolName})`)}\n`,
+      `${palette.fileRef(sanitizeForDisplay(filePath))}  ${palette.meta(`(${toolName})`)}\n`,
     );
     return;
+  }
+
+  // Kitty protocol only supports PNG (f=100). Reject other formats early.
+  const ext = path.extname(filePath).toLowerCase();
+  if (protocol === 'kitty' && ext !== '.png') {
+    process.stdout.write(
+      `${palette.fileRef(sanitizeForDisplay(filePath))}  ${palette.meta(`(${toolName} — non-PNG not rendered inline via Kitty)`)}\n`,
+    );
+    return;
+  }
+
+  // Check file size before reading — reject files larger than 2 MiB.
+  try {
+    const stat = await fs.stat(resolved);
+    if (stat.size > MAX_INLINE_IMAGE_BYTES) {
+      process.stdout.write(`${palette.fileRef(sanitizeForDisplay(filePath))}  ${palette.meta(`(${toolName} — file exceeds 2 MiB, not rendered inline)`)}\n`);
+      return;
+    }
+  } catch {
+    // stat failed — fall through to readFile which will fail and log the path
   }
 
   // Read the image bytes.
   let imageB64: string;
   try {
-    const buf = await fs.readFile(filePath);
+    const buf = await fs.readFile(resolved);
     imageB64 = buf.toString('base64');
   } catch {
     // File unreadable — fall back to path log.
     process.stdout.write(
-      `${palette.fileRef(filePath)}  ${palette.meta(`(${toolName} — could not read file)`)}\n`,
+      `${palette.fileRef(sanitizeForDisplay(filePath))}  ${palette.meta(`(${toolName} — could not read file)`)}\n`,
     );
     return;
   }
 
   // Emit the appropriate protocol sequence.
+  if (process.stdout.destroyed) return;
   try {
     if (protocol === 'kitty') {
       emitKittyImage(imageB64);
@@ -188,8 +247,8 @@ export async function renderInlineImage(opts: RenderInlineImageOptions): Promise
       emitIterm2Image(imageB64, filename);
     }
     // Print the path below the image so the user knows where it was saved.
-    process.stdout.write(`  ${palette.fileRef(filePath)}  ${palette.meta(`(${toolName})`)}\n`);
+    process.stdout.write(`  ${palette.fileRef(sanitizeForDisplay(filePath))}  ${palette.meta(`(${toolName})`)}\n`);
   } catch {
-    // Emit failed (e.g. stdout closed) — silently ignore.
+    // Emit failed — stream errors (EPIPE etc.) are handled by the error guard.
   }
 }
