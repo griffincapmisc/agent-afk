@@ -125,6 +125,12 @@ describe('record — turnIndex validation', () => {
     expect(() => ledger.record('bash', 'h1', ok(), -Infinity)).toThrow(RangeError);
   });
 
+  it('throws RangeError for non-integer turnIndex', () => {
+    const ledger = new ToolCallLedger(10);
+    expect(() => ledger.record('bash', 'h1', ok(), 1.5)).toThrow(RangeError);
+    expect(() => ledger.record('bash', 'h1', ok(), 2.9)).toThrow(RangeError);
+  });
+
   it('accepts turnIndex of 0', () => {
     const ledger = new ToolCallLedger(10);
     expect(() => ledger.record('bash', 'h1', ok(), 0)).not.toThrow();
