@@ -71,7 +71,7 @@ function extractImagePath(output: unknown): string | undefined {
  * hook framework awaits the return promise before proceeding, so the image
  * appears before the next model turn begins.
  */
-export function createInlineImageHook(): HookHandler {
+export function createInlineImageHook(agentCwd?: string | undefined): HookHandler {
   return async (context: HookContext): Promise<HookDecision> => {
     // Guard: PostToolUse only.
     if (context.event !== 'PostToolUse') return {};
@@ -93,7 +93,7 @@ export function createInlineImageHook(): HookHandler {
 
     // Fire-and-forget style from the caller's perspective, but we await here
     // so the image renders before the next turn prompt appears.
-    await renderInlineImage({ filePath, toolName: context.toolName });
+    await renderInlineImage({ filePath, toolName: context.toolName, agentCwd });
 
     return {};
   };

@@ -417,7 +417,7 @@ export function createDefaultHookRegistry(
   // terminal supports it. Non-blocking display-only hook; skipped on subagents
   // and non-TTY surfaces. Registered after the ledger so it fires last and never
   // interferes with policy or accounting hooks.
-  registry.register('PostToolUse', createInlineImageHook());
+  registry.register('PostToolUse', createInlineImageHook(agentOptions?.cwd));
   registerConfigHooks(registry, hookConfig, agentOptions);
   // Install process-scoped plugin declarations last; built-in and config
   // handlers retain their registration order above.

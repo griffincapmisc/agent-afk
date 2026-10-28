@@ -72,7 +72,6 @@ export type TerminalProtocol = 'kitty' | 'iterm2' | 'none';
 export function detectTerminalProtocol(): TerminalProtocol {
   const term = env.TERM ?? '';
   const termProgram = env.TERM_PROGRAM ?? '';
-  const termProgramVersion = env.TERM_PROGRAM_VERSION ?? '';
 
   // Kitty: TERM=xterm-kitty (canonical), or TERM_PROGRAM=ghostty / WezTerm.
   if (
@@ -84,11 +83,9 @@ export function detectTerminalProtocol(): TerminalProtocol {
   }
 
   // iTerm2: TERM_PROGRAM=iTerm.app. Also accept iTerm2 (older versions).
-  if (
-    termProgram === 'iTerm.app' ||
-    termProgram === 'iTerm2' ||
-    termProgramVersion.startsWith('iTerm')
-  ) {
+  // TERM_PROGRAM_VERSION is not checked — it carries a version string
+  // (e.g. "3.4.23"), not the program name, so it is not a reliable signal.
+  if (termProgram === 'iTerm.app' || termProgram === 'iTerm2') {
     return 'iterm2';
   }
 
@@ -152,6 +149,12 @@ export interface RenderInlineImageOptions {
   filePath: string;
   /** Tool that produced the image (for the fallback log label). */
   toolName: string;
+  /**
+   * The agent's effective working directory, threaded from `agentOptions?.cwd`
+   * at hook-registration time. Used to compute the path allowlist so it tracks
+   * the agent's workspace rather than the process working directory.
+   */
+  agentCwd?: string | undefined;
 }
 
 /**
@@ -167,22 +170,25 @@ export interface RenderInlineImageOptions {
  * the hook dispatch or the tool result delivery.
  */
 export async function renderInlineImage(opts: RenderInlineImageOptions): Promise<void> {
-  const { filePath, toolName } = opts;
+  const { filePath, toolName, agentCwd } = opts;
 
-  // Respect the opt-out flag.
+  // Respect the opt-out flag. Only '1', 'true', or unset (undefined) are
+  // treated as enabled; any other value (including arbitrary strings) disables.
   const flag = env.AFK_INLINE_IMAGES;
-  if (flag === '0' || flag === 'false') {
+  if (flag !== undefined && flag !== '1' && flag !== 'true') {
     return;
   }
 
   // Install EPIPE guard so a broken pipe on stdout does not throw.
   ensureStdoutErrorGuard();
 
-  // Validate path: must resolve to within tmpdir or cwd (security gate).
+  // Validate path: must resolve to within tmpdir or the agent's cwd.
+  // Use agentCwd (threaded from agentOptions?.cwd at registration) rather than
+  // process.cwd() so the gate tracks the agent's workspace, not the process's.
   const resolved = path.resolve(filePath);
   const allowedPrefixes = [
     path.resolve(os.tmpdir()) + path.sep,
-    path.resolve(process.cwd()) + path.sep,
+    path.resolve(agentCwd ?? process.cwd()) + path.sep,
   ];
   const isAllowed = allowedPrefixes.some((prefix) => resolved.startsWith(prefix));
   if (!isAllowed) {
@@ -212,9 +218,15 @@ export async function renderInlineImage(opts: RenderInlineImageOptions): Promise
     return;
   }
 
-  // Check file size before reading — reject files larger than 2 MiB.
+  // Stat the file: confirm it is a regular file and reject oversized files.
   try {
     const stat = await fs.stat(resolved);
+    if (!stat.isFile()) {
+      process.stdout.write(
+        `${palette.fileRef(sanitizeForDisplay(filePath))}  ${palette.meta(`(${toolName} — not a regular file)`)}\n`,
+      );
+      return;
+    }
     if (stat.size > MAX_INLINE_IMAGE_BYTES) {
       process.stdout.write(`${palette.fileRef(sanitizeForDisplay(filePath))}  ${palette.meta(`(${toolName} — file exceeds 2 MiB, not rendered inline)`)}\n`);
       return;
