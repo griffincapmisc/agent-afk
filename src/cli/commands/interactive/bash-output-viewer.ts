@@ -25,8 +25,10 @@
  * @module cli/commands/interactive/bash-output-viewer
  */
 
+import { truncateDisplayWidth } from '../../display.js';
 import { palette } from '../../palette.js';
 import type { PickerHost } from '../../render/picker.js';
+import { getTerminalWidth } from '../../terminal-size.js';
 import {
   type ViewerState,
   type ViewerLoadError,
@@ -123,6 +125,7 @@ function buildRows(
   capturePath: string,
   searchMode: boolean,
   searchBuf: string,
+  displayWidth: number,
 ): readonly string[] {
   const rows: string[] = [];
   rows.push(buildHeader(state, capturePath, searchMode, searchBuf));
@@ -140,7 +143,7 @@ function buildRows(
     } else if (!state.searchQuery) {
       rendered = palette.dim(rendered);
     }
-    rows.push(rendered);
+    rows.push(truncateDisplayWidth(rendered, displayWidth, ''));
   }
 
   if (state.lines.length === 0) {
@@ -230,7 +233,7 @@ export function runBashOutputViewer(
     const effectivePath = capturePath ?? '';
 
     const renderRows = (): readonly string[] =>
-      buildRows(state, effectivePath, searchMode, searchBuf);
+      buildRows(state, effectivePath, searchMode, searchBuf, getTerminalWidth());
 
     const onKey = (
       char: string | undefined,
