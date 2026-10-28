@@ -278,5 +278,48 @@ describe('/branches', () => {
       expect(result).toBe('continue');
       expect(lines.some((l) => l.includes('Usage:'))).toBe(true);
     });
+
+    it('does not route /branches switchfoo as a switch subcommand', async () => {
+      setupSidecars();
+      const { ctx, lines } = makeCtx({ sessionId: SESSION_A });
+      // "switchfoo" has no word boundary — must fall through to the list path.
+      const result = await branchesCmd.handler(ctx, 'switchfoo');
+      expect(result).toBe('continue');
+      // List path emits the branch-count heading, not "No branch found" / "Usage:".
+      expect(lines.some((l) => l.includes('branch'))).toBe(true);
+      expect(lines.some((l) => l.includes('Usage:'))).toBe(false);
+      expect(lines.some((l) => l.includes('No branch found'))).toBe(false);
+    });
+
+    it('warns when requestResume is present but findSession returns undefined (TOCTOU)', async () => {
+      setupSidecars();
+      const requestResume = vi.fn().mockResolvedValue({ ok: true });
+      findSessionMock.mockReturnValue(undefined); // TOCTOU: session vanished
+
+      const { ctx, lines } = makeCtx({ sessionId: SESSION_A, requestResume });
+      const result = await branchesCmd.handler(ctx, 'switch bbbb');
+      expect(result).toBe('continue');
+      // requestResume must NOT have been called (no target to pass).
+      expect(requestResume).not.toHaveBeenCalled();
+      // Should emit a warning about session not found.
+      expect(lines.some((l) => l.includes('not found'))).toBe(true);
+      // Falls back to printing the resume command.
+      expect(lines.some((l) => l.includes('afk interactive --resume'))).toBe(true);
+    });
+
+    it('falls back to resume command when requestResume returns { ok: false }', async () => {
+      setupSidecars();
+      const requestResume = vi.fn().mockResolvedValue({ ok: false });
+      findSessionMock.mockReturnValue({ id: SESSION_B, data: sidecarB });
+
+      const { ctx, lines } = makeCtx({ sessionId: SESSION_A, requestResume });
+      const result = await branchesCmd.handler(ctx, 'switch bbbb');
+      expect(result).toBe('continue');
+      expect(requestResume).toHaveBeenCalledOnce();
+      // Success banner must NOT appear (swap failed).
+      expect(lines.some((l) => l.includes('Switching'))).toBe(false);
+      // Falls back to printing the resume command.
+      expect(lines.some((l) => l.includes('afk interactive --resume'))).toBe(true);
+    });
   });
 });

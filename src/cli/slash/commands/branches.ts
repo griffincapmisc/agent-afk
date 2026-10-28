@@ -17,6 +17,7 @@
 import { palette } from '../../palette.js';
 import { loadSession, findSession, listSessions } from '../../session-store.js';
 import { formatResumeCommand } from '../../resume-command.js';
+import { isSafeLedgerSessionId } from '../../../paths.js';
 import type { SlashCommand, SlashContext, SlashResult } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -37,6 +38,7 @@ function ancestorChain(sessionId: string): string[] {
     const sidecar = loadSession(tip);
     const parent = sidecar?.forkedFrom;
     if (!parent) break;
+    if (!isSafeLedgerSessionId(parent)) break; // reject unsafe ids from stored sidecars
     if (visited.has(parent)) break; // cycle guard
     visited.add(parent);
     chain.push(parent);
@@ -177,11 +179,6 @@ async function handleSwitch(
   const resumeKey = branch.sessionId ?? branch.id;
   const command = formatResumeCommand(resumeKey, branch.model);
 
-  ctx.out.success(`Switching to branch ${shortId(branch.id)}…`);
-  ctx.out.line('');
-  ctx.out.line(palette.dim('  To restore that branch\'s files, run /rewind files after switching.'));
-  ctx.out.line('');
-
   // Use requestResume when available (REPL interactive swap).
   if (typeof ctx.requestResume === 'function') {
     const found = findSession(resumeKey);
@@ -189,7 +186,15 @@ async function handleSwitch(
       const target = { id: found.id, resumeId: found.data.sessionId ?? found.id, stored: found.data };
       const result = await ctx.requestResume(target);
       // After a successful swap the REPL replaces the session; nothing more to emit.
-      if (result.ok) return 'continue';
+      if (result.ok) {
+        ctx.out.success(`Switching to branch ${shortId(branch.id)}…`);
+        ctx.out.line('');
+        ctx.out.line(palette.dim('  To restore that branch\'s files, run /rewind files after switching.'));
+        ctx.out.line('');
+        return 'continue';
+      }
+    } else {
+      ctx.out.warn(`Session ${shortId(resumeKey)} not found; falling back to resume command.`);
     }
   }
 
@@ -221,7 +226,7 @@ export const branchesCmd: SlashCommand = {
     const trimmed = args.trim();
 
     // Subcommand: /branches switch <id>
-    if (trimmed.startsWith('switch')) {
+    if (trimmed === 'switch' || trimmed.startsWith('switch ')) {
       const targetArg = trimmed.slice('switch'.length).trim();
       return handleSwitch(ctx, currentId, targetArg);
     }
