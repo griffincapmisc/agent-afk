@@ -19,6 +19,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { unlinkSync } from 'node:fs';
 import { renderSelector } from '../../input/selectors.js';
 import type { SlashCommand, SlashContext } from '../types.js';
 import type { RewindTarget } from '../../../agent/provider.js';
@@ -131,11 +132,21 @@ async function forkBeforeRewind(ctx: SlashContext): Promise<void> {
   }
   const sourceId = ctx.stats.sessionId;
   if (!sourceId) return;
+  let newId: string | undefined;
+  let newPath: string | undefined;
   try {
-    const { id: newId } = forkStoredSession(ctx.stats);
-    forkJournal(sourceId, newId);
+    const forked = forkStoredSession(ctx.stats);
+    newId = forked.id;
+    newPath = forked.path;
   } catch {
     // best-effort: never block the rewind on a fork failure
+    return;
+  }
+  try {
+    forkJournal(sourceId, newId);
+  } catch {
+    // forkJournal failed — remove the orphaned sidecar to prevent ghost branches
+    try { if (newPath) unlinkSync(newPath); } catch { /* ignore cleanup failure */ }
   }
 }
 

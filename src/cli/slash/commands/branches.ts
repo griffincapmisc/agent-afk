@@ -16,6 +16,7 @@
 
 import { palette } from '../../palette.js';
 import { loadSession, findSession, listSessions } from '../../session-store.js';
+import { resolveFromFound } from './resume.js';
 import { formatResumeCommand } from '../../resume-command.js';
 import { isSafeLedgerSessionId } from '../../../paths.js';
 import type { SlashCommand, SlashContext, SlashResult } from '../types.js';
@@ -183,8 +184,7 @@ async function handleSwitch(
   if (typeof ctx.requestResume === 'function') {
     const found = findSession(resumeKey);
     if (found) {
-      const target = { id: found.id, resumeId: found.data.sessionId ?? found.id, stored: found.data };
-      const result = await ctx.requestResume(target);
+      const result = await ctx.requestResume(resolveFromFound(found));
       // After a successful swap the REPL replaces the session; nothing more to emit.
       if (result.ok) {
         ctx.out.success(`Switching to branch ${shortId(branch.id)}…`);
