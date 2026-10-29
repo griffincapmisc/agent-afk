@@ -302,11 +302,11 @@ function repaintPickerFrame(self: FrameHost): void {
     contentHugBandReserve(self, self.stdout.rows ?? 24),
   );
   const { margin, width: bandWidth } = contentBand(self.stdout.columns ?? 80);
-  // Skip band-width truncation for editable overlays (e.g. text-input): their
-  // rows embed an inline caret, and truncating from the right hides the caret
-  // and all text after the cursor when the user types a long answer.
-  // Passing undefined lets buildPickerFrameLines default to Infinity (no-op).
-  const pickerBandWidth = self.pickerController.editable ? undefined : bandWidth;
+  // Skip band-width truncation when the controller requests it (e.g.
+  // text-input overlays with an inline caret, or bash-output-viewer with
+  // pre-formatted rows). Passing undefined lets buildPickerFrameLines
+  // default to Infinity (no-op).
+  const pickerBandWidth = self.pickerController.skipBandTruncation ? undefined : bandWidth;
   const frameLines = buildPickerFrameLines(
     chrome, layout.trimmedOverlay, layout.renderGap, pickerRows, margin, pickerBandWidth,
   );

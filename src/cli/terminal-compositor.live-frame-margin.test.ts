@@ -189,8 +189,8 @@ describe('live frame margin under AFK_CENTER_CONTENT (compositor owns the margin
     // Regression guard for the editable-truncation bug: when a runTextInput
     // overlay is active, the input row embeds an inline caret character (▏ or
     // an inverse-video character). Band-width truncation from the right would
-    // hide the caret when the buffer fills the band. The fix: editable:true on
-    // the controller causes repaintPickerFrame to pass undefined bandWidth, so
+    // hide the caret when the buffer fills the band. The fix: skipBandTruncation:true
+    // on the controller causes repaintPickerFrame to pass undefined bandWidth, so
     // buildPickerFrameLines defaults to Infinity and skips truncation.
     //
     // Geometry: COLS=200, AFK_TEXT_MEASURE=100 → margin=50, bandWidth=150.
