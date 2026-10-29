@@ -66,7 +66,7 @@ function fmtWhen(ts: number): string {
 }
 
 /** Convert a found session entry into a ResolvedResumeTarget. */
-function resolveFromFound(found: NonNullable<ReturnType<typeof findSession>>): ResolvedResumeTarget {
+export function resolveFromFound(found: NonNullable<ReturnType<typeof findSession>>): ResolvedResumeTarget {
   return {
     id: found.id,
     resumeId: found.data.sessionId ?? found.id,
