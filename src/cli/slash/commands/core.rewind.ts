@@ -142,11 +142,9 @@ async function forkBeforeRewind(ctx: SlashContext): Promise<void> {
     // best-effort: never block the rewind on a fork failure
     return;
   }
-  try {
-    forkJournal(sourceId, newId);
-  } catch {
-    // forkJournal failed — remove the orphaned sidecar to prevent ghost branches
-    try { if (newPath) unlinkSync(newPath); } catch { /* ignore cleanup failure */ }
+  const ok = forkJournal(sourceId, newId!);
+  if (!ok && newPath) {
+    try { unlinkSync(newPath); } catch { /* ignore cleanup failure */ }
   }
 }
 

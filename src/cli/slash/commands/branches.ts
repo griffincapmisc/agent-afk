@@ -28,15 +28,20 @@ import type { SlashCommand, SlashContext, SlashResult } from '../types.js';
 /**
  * Walk the forkedFrom chain upward from `sessionId`, returning every id in
  * the chain (current → … → root). Bounded to avoid loops on corrupt sidecars.
+ * Populated into `memo` as a side-effect so callers can reuse loaded sidecars.
  */
-function ancestorChain(sessionId: string): string[] {
+function ancestorChain(sessionId: string, memo: Map<string, ReturnType<typeof loadSession>>): string[] {
   const chain: string[] = [sessionId];
   const visited = new Set<string>([sessionId]);
   const MAX_DEPTH = 64;
 
   for (let i = 0; i < MAX_DEPTH; i++) {
     const tip = chain[chain.length - 1]!;
-    const sidecar = loadSession(tip);
+    let sidecar = memo.get(tip);
+    if (sidecar === undefined) {
+      sidecar = loadSession(tip);
+      memo.set(tip, sidecar);
+    }
     const parent = sidecar?.forkedFrom;
     if (!parent) break;
     if (!isSafeLedgerSessionId(parent)) break; // reject unsafe ids from stored sidecars
@@ -48,8 +53,8 @@ function ancestorChain(sessionId: string): string[] {
 }
 
 /** Return the root session id of the branch tree containing `sessionId`. */
-function rootOf(sessionId: string): string {
-  const chain = ancestorChain(sessionId);
+function rootOf(sessionId: string, memo: Map<string, ReturnType<typeof loadSession>>): string {
+  const chain = ancestorChain(sessionId, memo);
   return chain[chain.length - 1] ?? sessionId;
 }
 
@@ -74,14 +79,20 @@ interface BranchEntry {
  * descending (most-recent tip first).
  */
 function collectBranches(currentId: string): BranchEntry[] {
-  const root = rootOf(currentId);
+  const memo = new Map<string, ReturnType<typeof loadSession>>();
+  const root = rootOf(currentId, memo);
   const branches: BranchEntry[] = [];
 
   for (const entry of listSessions()) {
-    const entryRoot = rootOf(entry.id);
+    const entryRoot = rootOf(entry.id, memo);
     if (entryRoot !== root) continue;
 
-    const sidecar = loadSession(entry.id);
+    // Reuse the sidecar already loaded by rootOf/ancestorChain when available.
+    let sidecar = memo.get(entry.id);
+    if (sidecar === undefined) {
+      sidecar = loadSession(entry.id);
+      memo.set(entry.id, sidecar);
+    }
     const isCurrent =
       entry.id === currentId ||
       (entry.sessionId !== undefined && entry.sessionId === currentId);
