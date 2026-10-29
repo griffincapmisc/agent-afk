@@ -195,6 +195,15 @@ async function handleSwitch(
   if (typeof ctx.requestResume === 'function') {
     const found = findSession(resumeKey);
     if (found) {
+      const currentSdkId = ctx.session.current.sessionId;
+      const targetSdkId = found.data.sessionId;
+      const isSameSession =
+        (currentSdkId !== undefined && targetSdkId !== undefined && currentSdkId === targetSdkId) ||
+        (currentSdkId !== undefined && currentSdkId === found.id);
+      if (isSameSession) {
+        ctx.out.info('Already on this branch.');
+        return 'continue';
+      }
       const result = await ctx.requestResume(resolveFromFound(found));
       // After a successful swap the REPL replaces the session; nothing more to emit.
       if (result.ok) {

@@ -132,19 +132,16 @@ async function forkBeforeRewind(ctx: SlashContext): Promise<void> {
   }
   const sourceId = ctx.stats.sessionId;
   if (!sourceId) return;
-  let newId: string | undefined;
-  let newPath: string | undefined;
+  let forked: { id: string; path: string };
   try {
-    const forked = forkStoredSession(ctx.stats);
-    newId = forked.id;
-    newPath = forked.path;
+    forked = forkStoredSession(ctx.stats);
   } catch {
     // best-effort: never block the rewind on a fork failure
     return;
   }
-  const ok = forkJournal(sourceId, newId!);
-  if (!ok && newPath) {
-    try { unlinkSync(newPath); } catch { /* ignore cleanup failure */ }
+  const ok = forkJournal(sourceId, forked.id);
+  if (!ok) {
+    try { unlinkSync(forked.path); } catch { /* ignore cleanup failure */ }
   }
 }
 
