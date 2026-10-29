@@ -84,6 +84,7 @@ function collectBranches(currentId: string): BranchEntry[] {
   const branches: BranchEntry[] = [];
 
   for (const entry of listSessions()) {
+    if (!isSafeLedgerSessionId(entry.id)) continue; // reject unsafe ids from stored sidecars
     const entryRoot = rootOf(entry.id, memo);
     if (entryRoot !== root) continue;
 

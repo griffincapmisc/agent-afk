@@ -124,34 +124,50 @@ async function restoreFiles(ctx: SlashContext, session: Session, checkpointTurnI
  * silently no-ops — the rewind still proceeds. We flush the live journal queue
  * first so the on-disk fold includes all messages up to this moment.
  */
-async function forkBeforeRewind(ctx: SlashContext): Promise<void> {
+interface ForkResult { id: string; path: string }
+
+/**
+ * Attempt to fork the pre-rewind journal state. Returns the fork metadata on
+ * success so the caller can clean it up if the rewind itself fails (preventing
+ * ghost branches). Returns `undefined` when the fork could not be created.
+ */
+async function forkBeforeRewind(ctx: SlashContext): Promise<ForkResult | undefined> {
   try {
     await ctx.session.current.messageJournal?.flush();
   } catch {
     // flush failure → proceed; fork may be slightly stale but still useful
   }
   const sourceId = ctx.stats.sessionId;
-  if (!sourceId) return;
-  let forked: { id: string; path: string };
+  if (!sourceId) return undefined;
+  let forked: ForkResult;
   try {
     forked = forkStoredSession(ctx.stats);
   } catch {
     // best-effort: never block the rewind on a fork failure
-    return;
+    return undefined;
   }
   const ok = forkJournal(sourceId, forked.id);
   if (!ok) {
     try { unlinkSync(forked.path); } catch { /* ignore cleanup failure */ }
+    return undefined;
   }
+  return forked;
+}
+
+/** Remove a forked sidecar + journal when the rewind it was created for fails. */
+function cleanupFork(forked: ForkResult): void {
+  try { unlinkSync(forked.path); } catch { /* ignore cleanup failure */ }
 }
 
 async function rewindConversation(ctx: SlashContext, session: Session, target: RewindTarget, dropped: number, total: number) {
   // Fork the pre-rewind state so the abandoned path survives as a branch.
   // This runs BEFORE truncation so the fork captures the full history.
-  await forkBeforeRewind(ctx);
+  const forked = await forkBeforeRewind(ctx);
 
   const result = await session.rewindConversation(target.turnIndex);
   if (!result.rewound) {
+    // Rewind failed — clean up the fork to avoid ghost branches.
+    if (forked) cleanupFork(forked);
     const reason = result.reason ?? 'unknown';
     if (reason === 'not-supported') {
       ctx.out.warn('Rewind is not supported for this provider — use a Claude model to enable /rewind.');
