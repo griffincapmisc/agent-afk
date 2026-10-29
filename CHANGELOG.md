@@ -12,6 +12,8 @@ The `/changelog` slash command omits the hash (entries are formatted without it)
 
 ## [Unreleased]
 
+## [5.340.0] - 2026-10-29
+
 ### Added
 - implement ToolCallLedger class with bounded turn-window map (427b33a7d)
 - inline terminal image rendering via Kitty graphics protocol (99d58b7f7)
