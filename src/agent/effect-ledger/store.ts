@@ -243,3 +243,36 @@ export class EffectStore {
     return this.query();
   }
 }
+
+// ---------------------------------------------------------------------------
+// Bounded per-session reader (outcomes computation at SessionEnd)
+// ---------------------------------------------------------------------------
+
+/** Options for {@link readEffectsForSession}. */
+export interface ReadEffectsForSessionOptions {
+  /** Ledger path override (tests). Defaults to `getEffectLedgerPath()`. */
+  path?: string;
+  /** Stop after this many matching rows. Default 2000. */
+  maxRecords?: number;
+}
+
+/**
+ * Stream the ledger and return the raw rows (pending + settled, unfolded)
+ * whose `sessionId` matches. The file can be MBs, so it is streamed line by
+ * line rather than loaded whole. ENOENT yields []. Other I/O errors
+ * propagate — callers on the teardown path must catch.
+ */
+export async function readEffectsForSession(
+  sessionId: string,
+  opts: ReadEffectsForSessionOptions = {},
+): Promise<EffectRecord[]> {
+  const max = opts.maxRecords ?? 2000;
+  const out: EffectRecord[] = [];
+  const iter = readJsonlFile<EffectRecord>(opts.path ?? getEffectLedgerPath(), { guard: isEffectRecord });
+  for await (const rec of iter) {
+    if (rec.sessionId !== sessionId) continue;
+    out.push(rec);
+    if (out.length >= max) break;
+  }
+  return out;
+}

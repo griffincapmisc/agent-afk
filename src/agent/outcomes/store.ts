@@ -164,6 +164,17 @@ export function upsertVotes(
     record.session_ended_at = base.session_ended_at;
   }
 
+  // Backfill outcomes + merge base artifacts when an earlier writer (e.g. an
+  // appendArtifacts child-attribution skeleton) created the record first.
+  if (existing && base?.outcomes !== undefined && record.outcomes === undefined) {
+    record.outcomes = base.outcomes;
+    record.artifacts = {
+      commits: [...new Set([...record.artifacts.commits, ...base.artifacts.commits])],
+      prs: [...new Set([...record.artifacts.prs, ...base.artifacts.prs])],
+      repo: record.artifacts.repo ?? base.artifacts.repo,
+    };
+  }
+
   // Merge votes: dedupe by lf+evidence (incoming wins on collision)
   const merged = _mergeVotes(record.votes, newVotes);
   record.votes = merged;
