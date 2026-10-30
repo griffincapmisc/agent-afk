@@ -79,6 +79,11 @@ export function mergeCommits(
       continue;
     }
     const prev = out[idx]!;
+    // git_log always wins over any existing entry (structurally enforced).
+    if (c.source === 'git_log') {
+      out[idx] = { ...c, sha };
+      continue;
+    }
     // A ledger row only upgrades another ledger row, and only to a longer sha.
     if (prev.source === 'effect_ledger' && c.source === 'effect_ledger' && sha.length > prev.sha.length) {
       out[idx] = { ...c, sha };

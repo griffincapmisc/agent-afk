@@ -14,7 +14,7 @@ import { OUTCOMES_COMMITS_CAP } from './outcomes-v1.schema.js';
 import type { GitLogEntry } from './compute-outcomes.js';
 
 const DEFAULT_TIMEOUT_MS = 5_000;
-const SHA_RE = /^[0-9a-f]{7,40}$/i;
+const SHA_RE = /^[0-9a-f]{7,40}$/;
 const FIELD_SEP = '\x1f';
 
 export interface GitLogRangeOptions {
