@@ -59,6 +59,8 @@ export const ArtifactsSchema = z.object({
   commits: z.array(z.string()),
   prs: z.array(z.string()),
   repo: z.string().nullable(),
+  /** Per-commit repository provenance; absent on legacy single-repo records. */
+  commitRepos: z.record(z.string(), z.string()).optional(),
 });
 
 export type Artifacts = z.infer<typeof ArtifactsSchema>;

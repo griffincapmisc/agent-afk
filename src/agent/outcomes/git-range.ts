@@ -19,12 +19,14 @@ const FIELD_SEP = '\x1f';
 
 export interface GitLogRangeOptions {
   timeoutMs?: number;
+  signal?: AbortSignal;
 }
 
 /** Callers pass `--no-optional-locks` first in `args` (audit:git-locks scans each call line). */
-async function git(cwd: string, args: string[], timeoutMs: number): Promise<string> {
+async function git(cwd: string, args: string[], timeoutMs: number, signal?: AbortSignal): Promise<string> {
   const { stdout } = await execFileAsync('git', ['-C', cwd, ...args], {
     timeout: timeoutMs,
+    ...(signal ? { signal } : {}),
     killSignal: 'SIGTERM',
     maxBuffer: 4 * 1024 * 1024,
   });
@@ -47,12 +49,13 @@ export async function gitLogRange(
   if (endHead !== null && startHead.toLowerCase() === endHead.toLowerCase()) return [];
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   try {
-    const repo = (await git(cwd, ['--no-optional-locks', 'rev-parse', '--show-toplevel'], timeoutMs)).trim();
+    const repo = (await git(cwd, ['--no-optional-locks', 'rev-parse', '--show-toplevel'], timeoutMs, opts.signal)).trim();
     if (!repo) return [];
     const out = await git(
       cwd,
       ['--no-optional-locks', 'log', `--max-count=${OUTCOMES_COMMITS_CAP}`, `--format=%H${FIELD_SEP}%s`, `${startHead}..${endHead ?? 'HEAD'}`, '--'],
       timeoutMs,
+      opts.signal,
     );
     const entries: GitLogEntry[] = [];
     for (const line of out.split('\n')) {

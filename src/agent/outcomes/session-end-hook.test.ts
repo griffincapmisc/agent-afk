@@ -317,6 +317,7 @@ describe('artifactsFromOutcomes', () => {
       commits: ['b'.repeat(40), 'ccccccc'],
       prs: ['https://github.com/o/r/pull/3'],
       repo: '/repo',
+      commitRepos: { ['b'.repeat(40)]: '/repo', ccccccc: '/repo' },
     });
   });
 

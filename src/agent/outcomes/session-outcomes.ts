@@ -20,11 +20,8 @@
 
 import { debugLog } from '../../utils/debug.js';
 import { execFileAsync } from '../../utils/exec-file.js';
-import { readSessionMeta, readSessionStart } from '../session/session-meta.js';
+import { readOutcomesMeta, readOutcomesJournal, checkBudget, type InputBudget } from './outcomes-input.js';
 import { readEffectsForSession } from '../effect-ledger/store.js';
-import { journalRecordsToToolEvents } from '../facets/journal-adapter.js';
-import { loadJournalMessages, readJournalRecords } from '../journal/reader.js';
-import type { JournalMessage } from '../journal/types.js';
 import { computeOutcomes } from './compute-outcomes.js';
 import { gitLogRange } from './git-range.js';
 import { OutcomesV1Schema, type OutcomesV1 } from './outcomes-v1.schema.js';
@@ -56,10 +53,11 @@ export function _resetSessionOutcomesCache(): void {
 }
 
 /** Full HEAD sha of `cwd`, or null (not a repo, git missing, timeout). */
-export async function readEndHead(cwd: string): Promise<string | null> {
+export async function readEndHead(cwd: string, signal?: AbortSignal): Promise<string | null> {
   try {
     const { stdout } = await execFileAsync('git', ['-C', cwd, '--no-optional-locks', 'rev-parse', 'HEAD'], {
       timeout: HEAD_TIMEOUT_MS,
+      ...(signal ? { signal } : {}),
       killSignal: 'SIGTERM',
       maxBuffer: 4096,
     });
@@ -70,42 +68,28 @@ export async function readEndHead(cwd: string): Promise<string | null> {
   }
 }
 
-function lastAssistantText(messages: JournalMessage[] | null): string | null {
-  if (!messages) return null;
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const m = messages[i]!;
-    if (m.role !== 'assistant') continue;
-    const text = m.content
-      .map((b) => (b.type === 'text' ? b.text : b.type === 'text_ref' ? b.preview : ''))
-      .join('');
-    if (text.length > 0) return text;
-  }
-  return null;
-}
-
-async function compute(sessionId: string, ctx: SessionOutcomesContext): Promise<OutcomesV1 | null> {
-  const cwd = readSessionMeta(sessionId)?.cwd ?? ctx.cwd;
+async function compute(sessionId: string, ctx: SessionOutcomesContext, budget: InputBudget): Promise<OutcomesV1 | null> {
+  const meta = await readOutcomesMeta(sessionId, budget);
+  const cwd = meta?.cwd ?? ctx.cwd;
   if (cwd === undefined) return null;
-  const start = readSessionStart(sessionId);
-  const startHead = start?.headSha ?? null;
-  const endHead = await readEndHead(cwd);
-  const [gitLog, ledgerEntries] = await Promise.all([
-    gitLogRange(cwd, startHead, endHead),
-    readEffectsForSession(sessionId).catch((err: unknown) => {
-      debugLog(`[session-outcomes] ledger read failed: ${String(err)}`);
-      return [];
-    }),
+  const startHead = meta?.gitHead?.headSha ?? null;
+  const endHead = await readEndHead(cwd, budget.signal);
+  checkBudget(budget);
+  const [gitLog, ledgerEntries, journal] = await Promise.all([
+    gitLogRange(cwd, startHead, endHead, { signal: budget.signal }),
+    readEffectsForSession(sessionId, { budget }),
+    readOutcomesJournal(sessionId, budget),
   ]);
-  const toolEvents = journalRecordsToToolEvents(readJournalRecords(sessionId));
+  checkBudget(budget);
   const outcomes = computeOutcomes({
     cwd,
     startHead,
     endHead,
     gitLog,
     ledgerEntries,
-    toolEvents,
-    lastAssistantMessage: lastAssistantText(loadJournalMessages(sessionId)),
+    ...journal,
   });
+  checkBudget(budget);
   const parsed = OutcomesV1Schema.safeParse(outcomes);
   if (!parsed.success) {
     debugLog(`[session-outcomes] schema rejected computed outcomes: ${parsed.error.message}`);
@@ -116,13 +100,16 @@ async function compute(sessionId: string, ctx: SessionOutcomesContext): Promise<
 
 function bounded(sessionId: string, ctx: SessionOutcomesContext, timeoutMs: number): Promise<OutcomesV1 | null> {
   return new Promise((resolve) => {
+    const controller = new AbortController();
+    const budget = { signal: controller.signal, deadline: Date.now() + timeoutMs };
     const timer = setTimeout(() => {
+      controller.abort(new Error('outcomes computation timed out'));
       debugLog(`[session-outcomes] timed out after ${timeoutMs}ms for ${sessionId}`);
       resolve(null);
     }, timeoutMs);
     timer.unref?.();
     Promise.resolve()
-      .then(() => compute(sessionId, ctx))
+      .then(() => compute(sessionId, ctx, budget))
       .then(
         (v) => resolve(v),
         (err: unknown) => {
@@ -130,7 +117,10 @@ function bounded(sessionId: string, ctx: SessionOutcomesContext, timeoutMs: numb
           resolve(null);
         },
       )
-      .finally(() => clearTimeout(timer));
+      .finally(() => {
+        clearTimeout(timer);
+        controller.abort();
+      });
   });
 }
 

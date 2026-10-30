@@ -169,12 +169,13 @@ function mergeArtifacts(base: Artifacts, extra: Artifacts): Artifacts {
   return base;
 }
 
-/** Map OutcomesV1 onto the legacy `artifacts` shape (repo = session cwd). */
+/** Preserve commit provenance and creation-only legacy PR scoring semantics. */
 export function artifactsFromOutcomes(o: OutcomesV1): Artifacts {
   return {
     commits: o.commits.map((c) => c.sha),
-    prs: o.prs.map((p) => p.url),
+    prs: o.prs.filter((p) => p.action === 'create').map((p) => p.url),
     repo: o.cwd,
+    commitRepos: Object.fromEntries(o.commits.map((c) => [c.sha, c.repo])),
   };
 }
 

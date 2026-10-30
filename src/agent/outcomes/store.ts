@@ -172,6 +172,7 @@ export function upsertVotes(
       commits: [...new Set([...record.artifacts.commits, ...base.artifacts.commits])],
       prs: [...new Set([...record.artifacts.prs, ...base.artifacts.prs])],
       repo: record.artifacts.repo ?? base.artifacts.repo,
+      commitRepos: { ...record.artifacts.commitRepos, ...base.artifacts.commitRepos },
     };
   }
 
@@ -285,6 +286,7 @@ export function appendArtifacts(
     commits: Array.from(commitsSet),
     prs: Array.from(prsSet),
     repo: record.artifacts.repo ?? incoming.repo ?? null,
+    ...(record.artifacts.commitRepos ? { commitRepos: record.artifacts.commitRepos } : {}),
   };
 
   // If artifacts arrived and record was settled, flip back to provisional

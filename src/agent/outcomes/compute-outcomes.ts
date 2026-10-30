@@ -139,7 +139,15 @@ export function computeOutcomes(input: ComputeOutcomesInput): OutcomesV1 {
     subject: g.subject,
     source: 'git_log',
   }));
-  const commits = mergeCommits(gitCommits, ledgerCommits(effects, cwd));
+  const journalCommits = events.flatMap((ev): OutcomeCommit[] => {
+    if (ev.toolName !== 'bash' || ev.isError === true || ev.result === undefined) return [];
+    const args = parseInput(ev.inputRaw ?? ev.input);
+    const command = asString(args?.['command']) ?? ev.input;
+    if (!command) return [];
+    return ledgerCommits([{ command, result: ev.result }], cwd)
+      .map((c) => ({ ...c, source: 'tool_result' as const }));
+  });
+  const commits = mergeCommits(gitCommits, [...ledgerCommits(effects, cwd), ...journalCommits]);
 
   const prs = ledgerPrs(effects); // deduped by url inside the extractor
   const files = filesFromToolEvents(events, cwd);

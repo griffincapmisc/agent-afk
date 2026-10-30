@@ -23,7 +23,7 @@ export const OutcomeCommitSchema = z.object({
   repo: z.string(),
   /** First line of the commit message. */
   subject: z.string(),
-  source: z.enum(['git_log', 'effect_ledger']),
+  source: z.enum(['git_log', 'effect_ledger', 'tool_result']),
 });
 export type OutcomeCommit = z.infer<typeof OutcomeCommitSchema>;
 

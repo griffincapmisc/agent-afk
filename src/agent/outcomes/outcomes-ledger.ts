@@ -14,7 +14,7 @@ import type { EffectRecord } from '../effect-ledger/types.js';
 import type { OutcomeCommit, OutcomePr, OutcomeService, PrAction } from './outcomes-v1.schema.js';
 
 // `(?![\w-])` rejects `git commit-tree` / `git commits` (mirrors derive.aggregate.ts).
-const COMMIT_CMD_RE = /\bgit\s+commit(?![\w-])/;
+const COMMIT_CMD_RE = /\bgit\s+(?:-C\s+(?:"[^"]+"|'[^']+'|[^\s;&|]+)\s+)*commit(?![\w-])/;
 // `[main abc1234] subject`, `[detached HEAD abc1234] subject`, `[main (root-commit) abc1234] subject`.
 const COMMIT_SUMMARY_RE = /^\[[^\]\n]*?\s([0-9a-f]{7,40})\]\s+(.*)$/gm;
 // `git log --oneline -1` output line: `abc1234 subject`.
@@ -28,7 +28,7 @@ const MERGED_REF_RE = /Merged pull request ([\w.-]+\/[\w.-]+)#(\d+)/g;
 const SERVICE_RE = /\bafk\s+service\s+(install|uninstall|start|stop|restart)\b(?:[ \t]+([A-Za-z0-9_-]+))?/g;
 
 /** Precedence when one PR URL is seen with several actions: the strongest wins. */
-const PR_ACTION_RANK: Record<PrAction, number> = { unknown: 0, update: 1, create: 2, merge: 3 };
+const PR_ACTION_RANK: Record<PrAction, number> = { unknown: 0, update: 1, merge: 2, create: 3 };
 
 /** A ledger row reduced to the two strings the extractors read. */
 interface LedgerEffect {
@@ -78,8 +78,12 @@ export function settledEffects(entries: readonly unknown[]): LedgerEffect[] {
 export function repoFromCommand(command: string, cwd: string): string {
   const m = LEADING_CD_RE.exec(command);
   const target = m?.[1] ?? m?.[2] ?? m?.[3];
-  if (!target || target.startsWith('~') || target.includes('$')) return cwd;
-  return isAbsolute(target) ? target : resolve(cwd, target);
+  const base = target && !target.startsWith('~') && !target.includes('$')
+    ? resolve(cwd, target) : cwd;
+  const gitC = /\bgit\s+-C\s+(?:"([^"]+)"|'([^']+)'|([^\s;&|]+))/.exec(command);
+  const gitTarget = gitC?.[1] ?? gitC?.[2] ?? gitC?.[3];
+  if (!gitTarget || gitTarget.startsWith('~') || gitTarget.includes('$')) return base;
+  return isAbsolute(gitTarget) ? gitTarget : resolve(base, gitTarget);
 }
 
 function firstLine(s: string): string {
