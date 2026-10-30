@@ -12,6 +12,8 @@ The `/changelog` slash command omits the hash (entries are formatted without it)
 
 ## [Unreleased]
 
+## [5.341.0] - 2026-10-30
+
 ### Added
 - keep abandoned conversations as branches and switch with /branches (#4294) (8d4adf1e3)
 - add PTY integration test for type-during-tool-round steering (6e63f85e0)
