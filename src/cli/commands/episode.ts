@@ -51,6 +51,17 @@ export function registerEpisodeCommand(program: Command): void {
 
         const episode = await synthesizeAndWriteEpisode(resolvedId as string);
 
+        // Item 3 guard: warn when the episode input was empty. resolveLatestSession()
+        // returns witness directory labels which may differ from runtime session IDs
+        // for `afk chat` sessions — those produce empty episodes.
+        if (episode.goal === 'Unknown goal') {
+          process.stderr.write(
+            `Warning: episode for ${resolvedId} has no goal or narrative.\n` +
+            `The session ID may be a witness label that differs from the runtime ID.\n` +
+            `Try passing the runtime session ID directly.\n`,
+          );
+        }
+
         process.stdout.write([
           '',
           `${palette.bold('Episode stored')} ${palette.dim(`[${episode.sessionId}]`)}`,

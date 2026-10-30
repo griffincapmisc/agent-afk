@@ -14,7 +14,7 @@ import { env } from '../../config/env.js';
 import { synthesizeAndWriteEpisode } from './index.js';
 
 export function createEpisodeSessionEndHook(): HookHandler {
-  return (context) => {
+  return async (context) => {
     if (context.event !== 'SessionEnd') return {};
     if (isSubagentContext(context)) return {};
 
@@ -24,10 +24,14 @@ export function createEpisodeSessionEndHook(): HookHandler {
     const sessionId = context.sessionId;
     if (!sessionId) return {};
 
-    // Fire-and-forget: never block or throw into teardown
-    void synthesizeAndWriteEpisode(sessionId).catch(() => {
+    // Await synthesis so the background lane (drainBackground) tracks it
+    // before fast-shutdown paths (Telegram bot.stop() → process.exit()) fire.
+    // Errors are swallowed — episode synthesis is additive, never critical.
+    try {
+      await synthesizeAndWriteEpisode(sessionId);
+    } catch {
       // Swallow all errors — episode synthesis is additive, never critical
-    });
+    }
 
     return {};
   };

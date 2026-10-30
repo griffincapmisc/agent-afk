@@ -142,22 +142,26 @@ export function extractEpisodeInput(sessionId: string): EpisodeInput {
     if (records.length === 0) return stub;
 
     const markSequence = extractMarkSequence(records);
-    const fold = foldJournal(records);
-    const messages = fold.messages;
 
-    if (messages.length === 0) return { ...stub, markSequence };
-
-    // First user message
+    // Compaction-aware: extract the first user message from RAW records before
+    // folding. After compaction the folded view's first user message is the
+    // compaction summary, not the original request. Scanning raw append records
+    // preserves the original intent even for the longest/most-complex sessions.
     let firstUserMessage = '';
-    for (const msg of messages) {
-      if (msg.role === 'user') {
-        const text = messageText(msg);
+    for (const rec of records) {
+      if (rec.kind === 'append' && rec.message.role === 'user') {
+        const text = messageText(rec.message);
         if (text) {
           firstUserMessage = text.slice(0, FIRST_MSG_CAP);
           break;
         }
       }
     }
+
+    const fold = foldJournal(records);
+    const messages = fold.messages;
+
+    if (messages.length === 0) return { ...stub, markSequence, firstUserMessage };
 
     // Last assistant message
     let lastAssistantMessage = '';
