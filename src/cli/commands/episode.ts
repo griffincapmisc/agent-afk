@@ -54,7 +54,7 @@ export function registerEpisodeCommand(program: Command): void {
         // Item 3 guard: warn when the episode input was empty. resolveLatestSession()
         // returns witness directory labels which may differ from runtime session IDs
         // for `afk chat` sessions — those produce empty episodes.
-        if (!episode.goal && !episode.narrative) {
+        if (episode.goal === 'Unknown goal') {
           process.stderr.write(
             `Warning: episode for ${resolvedId} has no goal or narrative.\n` +
             `The session ID may be a witness label that differs from the runtime ID.\n` +
