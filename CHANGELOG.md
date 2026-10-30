@@ -12,6 +12,16 @@ The `/changelog` slash command omits the hash (entries are formatted without it)
 
 ## [Unreleased]
 
+### Added
+- agent episode synthesis — opt-in, journal-based, deferred (#4565) (c32e1ac4f)
+- consumer-surface annotation + unified skill (#4564) (3d7c0ada4)
+
+### Fixed
+- allowlist gaps causing ground-state errors (#4560) (cb4b700e0)
+
+### Changed
+- remove /reauth slash command and dead-code chain (#4575) (1bb7a2600)
+
 ## [5.341.0] - 2026-10-30
 
 ### Added
