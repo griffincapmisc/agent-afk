@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { createCwdDependentsFactory } from './cwd-dependents.js';
+import { createCwdDependentsFactory, type CwdDependentsFactoryArgs } from './cwd-dependents.js';
 import { buildStableSystemPrefix } from './system-prompt.js';
 import { buildRuntimeStateSource } from '../../../awareness/index.js';
 import { gatherWorkspace } from '../../../awareness/workspace-source.js';
@@ -36,10 +36,12 @@ const LAUNCH_CWD = '/repo';
 const WORKTREE_CWD = '/repo/.afk-worktrees/feature';
 const MINTED_ID = 'a1b2c3d4-minted-session-id';
 
+type BuildDispatcher = CwdDependentsFactoryArgs['buildDispatcher'];
+
 function makeFactory(
   configOverrides: Partial<AgentConfig>,
   resolvedSessionId: string | undefined,
-  buildDispatcher: ReturnType<typeof vi.fn>,
+  buildDispatcher: BuildDispatcher,
 ) {
   let currentCwd: string | undefined = LAUNCH_CWD;
   const runtimeStateSource = buildRuntimeStateSource({
@@ -50,6 +52,7 @@ function makeFactory(
     permissionMode: 'default',
     getEnabledToolNames: () => [],
     getMcpTools: () => [] as AnthropicToolDef[],
+    getMcpServerStates: () => [],
     getSubagents: () => ({ active: [], backgroundJobs: [] }),
   });
 
@@ -80,7 +83,7 @@ function makeFactory(
 
 describe('cwd-dependents sessionId fix — resolvedSessionId threads through after cwd switch', () => {
   it('REGRESSION: passes resolvedSessionId (not config.sessionId) to rebuilt dispatcher', () => {
-    const buildDispatcher = vi.fn(() => ({}) as ToolDispatcher);
+    const buildDispatcher = vi.fn<BuildDispatcher>(() => ({}) as ToolDispatcher);
     // Fresh session: config.sessionId is absent (resume-only), but resolvedSessionId
     // carries the minted id from resolveTopLevelSessionId.
     const factory = makeFactory({ sessionId: undefined }, MINTED_ID, buildDispatcher);
@@ -95,7 +98,7 @@ describe('cwd-dependents sessionId fix — resolvedSessionId threads through aft
   });
 
   it('system prompt carries resolvedSessionId after the cwd switch', () => {
-    const buildDispatcher = vi.fn(() => ({}) as ToolDispatcher);
+    const buildDispatcher = vi.fn<BuildDispatcher>(() => ({}) as ToolDispatcher);
     const factory = makeFactory({ sessionId: undefined }, MINTED_ID, buildDispatcher);
 
     const { userSystem } = factory(WORKTREE_CWD);
@@ -107,7 +110,7 @@ describe('cwd-dependents sessionId fix — resolvedSessionId threads through aft
 
   it('does not regress when config.sessionId is set (resume path)', () => {
     // On --resume, config.sessionId and resolvedSessionId both carry the same id.
-    const buildDispatcher = vi.fn(() => ({}) as ToolDispatcher);
+    const buildDispatcher = vi.fn<BuildDispatcher>(() => ({}) as ToolDispatcher);
     const factory = makeFactory({ sessionId: MINTED_ID }, MINTED_ID, buildDispatcher);
 
     factory(WORKTREE_CWD);
@@ -121,12 +124,12 @@ describe('cwd-dependents sessionId fix — resolvedSessionId threads through aft
   it('dispatcher sessionId is undefined when resolvedSessionId is undefined (depth>0 subagent)', () => {
     // Child sessions may genuinely have no resolved id; the fix must not
     // fabricate one — it should propagate undefined faithfully.
-    const buildDispatcher = vi.fn(() => ({}) as ToolDispatcher);
+    const buildDispatcher = vi.fn<BuildDispatcher>(() => ({}) as ToolDispatcher);
     const factory = makeFactory({ sessionId: undefined }, undefined, buildDispatcher);
 
     factory(WORKTREE_CWD);
 
-    const opts = buildDispatcher.mock.calls[0]![1] as Record<string, unknown>;
-    expect(opts['sessionId']).toBeUndefined();
+    const opts = buildDispatcher.mock.calls[0]![1];
+    expect(opts.sessionId).toBeUndefined();
   });
 });
