@@ -12,6 +12,8 @@ The `/changelog` slash command omits the hash (entries are formatted without it)
 
 ## [Unreleased]
 
+## [5.342.0] - 2026-10-30
+
 ### Added
 - agent episode synthesis — opt-in, journal-based, deferred (#4565) (c32e1ac4f)
 - consumer-surface annotation + unified skill (#4564) (3d7c0ada4)
