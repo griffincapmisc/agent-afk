@@ -16,7 +16,7 @@ import { sessionLabelFromTracePath } from '../../paths.js';
 import { SessionLedgerWriter } from '../session-ledger.js';
 import type { OutputEvent } from '../types.js';
 import type { ElicitationRequest } from '../types/sdk-types.js';
-import { writeSessionMeta } from './session-meta.js';
+import { captureGitHead, writeSessionMeta } from './session-meta.js';
 
 /**
  * Inputs for {@link LedgerLifecycle.ensure}. `getMetadata` is a lazy accessor so
@@ -88,6 +88,10 @@ export class LedgerLifecycle {
       model,
       cwd: effectiveCwd,
       traceLabel,
+      // Capture full 40-hex HEAD SHA + branch once at top-level session start.
+      // captureGitHead is synchronous and bounded (3 s timeout, no shell).
+      // Non-git cwd yields { branch: null, headSha: null } — never throws.
+      gitHead: captureGitHead(effectiveCwd),
     });
   }
 
