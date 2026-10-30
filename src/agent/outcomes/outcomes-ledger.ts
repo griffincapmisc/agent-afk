@@ -14,7 +14,7 @@ import type { EffectRecord } from '../effect-ledger/types.js';
 import type { OutcomeCommit, OutcomePr, OutcomeService, PrAction } from './outcomes-v1.schema.js';
 
 // `(?![\w-])` rejects `git commit-tree` / `git commits` (mirrors derive.aggregate.ts).
-const COMMIT_CMD_RE = /\bgit\s+(?:-C\s+(?:"[^"]+"|'[^']+'|[^\s;&|]+)\s+)*commit(?![\w-])/;
+const COMMIT_CMD_RE = /\bgit\s+(?:-C\s+(?:"[^"]*"|'[^']*'|[^\s;&|"']+)\s+)?commit(?![\w-])/;
 // `[main abc1234] subject`, `[detached HEAD abc1234] subject`, `[main (root-commit) abc1234] subject`.
 const COMMIT_SUMMARY_RE = /^\[[^\]\n]*?\s([0-9a-f]{7,40})\]\s+(.*)$/gm;
 // `git log --oneline -1` output line: `abc1234 subject`.
