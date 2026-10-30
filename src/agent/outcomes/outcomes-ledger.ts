@@ -55,12 +55,21 @@ function resultText(result: unknown, depth = 0): string {
  */
 export function settledEffects(entries: readonly unknown[]): LedgerEffect[] {
   const byId = new Map<string, Partial<EffectRecord>>();
+  const noIdSeen = new Set<string>();
   const noId: Partial<EffectRecord>[] = [];
   for (const raw of entries) {
     if (!raw || typeof raw !== 'object') continue;
     const rec = raw as Partial<EffectRecord>;
-    if (typeof rec.id === 'string') byId.set(rec.id, rec);
-    else noId.push(rec);
+    if (typeof rec.id === 'string') {
+      byId.set(rec.id, rec);
+    } else {
+      // Content-hash dedup for id-less rows to prevent silent double-counting.
+      const key = JSON.stringify(rec);
+      if (!noIdSeen.has(key)) {
+        noIdSeen.add(key);
+        noId.push(rec);
+      }
+    }
   }
   const out: LedgerEffect[] = [];
   for (const rec of [...byId.values(), ...noId]) {
