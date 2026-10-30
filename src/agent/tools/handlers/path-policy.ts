@@ -18,8 +18,8 @@ export type { PathActorScope } from './path-policy.roots.js';
 
 export type PathAccessDecision =
   | { kind: 'allow'; resolved: string }
-  | { kind: 'deny'; reason: 'credential'; matched: string; resolved: string }
-  | { kind: 'deny'; reason: 'roots'; matched: string; resolved: string; roots: string[] };
+  | { kind: 'deny'; reason: 'credential'; matched: string; canonical: string; resolved: string }
+  | { kind: 'deny'; reason: 'roots'; resolved: string; roots: string[] };
 
 /** Omitted scope checks only the floor (back-compatible read-policy callers). */
 export function decidePathAccess(
@@ -34,11 +34,11 @@ export function decidePathAccess(
     ? isCanonicalPathReadDenied(real)
     : isCanonicalPathWriteDenied(real, safeNativeRealpath(resolved));
   if (floor.denied) {
-    return { kind: 'deny', reason: 'credential', matched: floor.matched ?? real, resolved };
+    return { kind: 'deny', reason: 'credential', matched: floor.matched ?? real, canonical: real, resolved };
   }
   const containment = decideActorContainment(resolved, op, scope, fallbackBase);
   if (containment.restricted) {
-    return { kind: 'deny', reason: 'roots', matched: resolved, resolved, roots: containment.roots };
+    return { kind: 'deny', reason: 'roots', resolved, roots: containment.roots };
   }
   return { kind: 'allow', resolved };
 }

@@ -62,6 +62,7 @@ import {
   PROTECTED_CREDENTIAL_PATH_MARKER,
 } from '../handlers/read-denylist.js';
 import { decidePathAccess } from '../handlers/path-policy.js';
+import { safeRealpath } from '../handlers/write-denylist.js';
 import { buildForkPathDenialReason } from './fork-denial-remedy.js';
 import type { HookContext, HookDecision, HookHandler } from '../../hooks.js';
 import {
@@ -239,19 +240,22 @@ async function preToolUseImpl(
   // Do not pass cwd as fallback confinement: undefined resolveBase is unconfined.
   const decision = decidePathAccess(resolvedAbs, mode, grants);
   if (decision.kind === 'deny' && decision.reason === 'credential') {
+    // Use the symlink-resolved (canonical) form so the log and block reason
+    // always name the real credential target, not the symlink that pointed to it.
+    const canonicalAbs = safeRealpath(resolvedAbs);
     if (mode === 'write') {
       // eslint-disable-next-line no-console
-      console.error(`[path-approval] surface=${opts.surface} tool=${context.toolName} path=${resolvedAbs} outcome=write-denylist`);
-      return { decision: 'block', reason: `Access denied: refusing to write to protected path: ${resolvedAbs} (matches denylist entry: ${decision.matched}).` };
+      console.error(`[path-approval] surface=${opts.surface} tool=${context.toolName} path=${canonicalAbs} outcome=write-denylist`);
+      return { decision: 'block', reason: `Access denied: refusing to write to protected path: ${canonicalAbs} (matches denylist entry: ${decision.matched}).` };
     }
     // eslint-disable-next-line no-console
     console.error(
-      `[path-approval] surface=${opts.surface} tool=${context.toolName} path=${resolvedAbs} outcome=read-denylist`,
+      `[path-approval] surface=${opts.surface} tool=${context.toolName} path=${canonicalAbs} outcome=read-denylist`,
     );
     return {
       decision: 'block',
       reason:
-        `Access denied: ${resolvedAbs} ${PROTECTED_CREDENTIAL_PATH_MARKER} ` +
+        `Access denied: ${canonicalAbs} ${PROTECTED_CREDENTIAL_PATH_MARKER} ` +
         `(${READ_DENYLIST_ENTRY_MARKER} ${decision.matched}). This path is never readable — ` +
         `it holds credentials, not task data; do not retry.`,
     };

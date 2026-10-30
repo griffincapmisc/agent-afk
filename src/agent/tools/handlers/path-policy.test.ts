@@ -173,13 +173,32 @@ describe('decidePathAccess — symlink bypass is blocked', () => {
 
 // ─── `matched` field ─────────────────────────────────────────────────────────
 
-describe('decidePathAccess — deny result carries matched entry', () => {
-  it('matched is set for a credential path', () => {
+describe('decidePathAccess — deny result carries matched/canonical entry', () => {
+  it('matched and canonical are set for a credential path', () => {
     const result = decidePathAccess(join(HOME, '.ssh', 'id_rsa'), 'read');
     expect(result.kind).toBe('deny');
-    if (result.kind === 'deny') {
+    if (result.kind === 'deny' && result.reason === 'credential') {
       expect(typeof result.matched).toBe('string');
       expect(result.matched.length).toBeGreaterThan(0);
+      expect(typeof result.canonical).toBe('string');
+      expect(result.canonical.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('roots deny result has no matched field', () => {
+    // Roots deny variant deliberately omits `matched` — its semantics were
+    // divergent (it held the candidate path itself, not a denylist entry).
+    // Use `roots` instead.
+    // We need a scoped call to reach a roots deny.
+    const result = decidePathAccess(join(HOME, 'outside'), 'read', {
+      resolveBase: HOME,
+      readRoots: [join(HOME, 'inner')],
+      writeRoots: [join(HOME, 'inner')],
+    });
+    expect(result.kind).toBe('deny');
+    if (result.kind === 'deny' && result.reason === 'roots') {
+      expect('matched' in result).toBe(false);
+      expect(Array.isArray(result.roots)).toBe(true);
     }
   });
 

@@ -108,7 +108,7 @@ export async function validatePatchChanges(
         path: rawPath,
         error: access.reason === 'credential' ? 'write_denied' : 'path_containment',
         detail: access.reason === 'credential'
-          ? `patch_apply: refusing to write to protected path: ${access.resolved} (matches denylist entry: ${access.matched})`
+          ? `patch_apply: refusing to write to protected path: ${access.canonical} (matches denylist entry: ${access.matched})`
           : `Path \`${rawPath}\` is outside the allowed write roots [${access.roots.map((r) => `\`${r}\``).join(', ')}].`,
       });
       continue;
