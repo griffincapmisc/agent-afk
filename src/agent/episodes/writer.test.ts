@@ -80,6 +80,21 @@ describe('sanitizeNarrative', () => {
     expect(result).toBe(prose);
   });
 
+  it('does not corrupt non-ASCII words containing operator substrings', () => {
+    // "standard" contains "AND", "nordic" contains "OR", "notation" contains "NOT"
+    // These must NOT be stripped — only standalone operators should be.
+    const prose = 'standard nordic notation';
+    expect(sanitizeNarrative(prose)).toBe(prose);
+  });
+
+  it('strips standalone AND/OR/NOT surrounded by non-ASCII letters', () => {
+    // Operators adjacent to Unicode letters (e.g. "café AND thé") should still be stripped
+    const result = sanitizeNarrative('café AND thé');
+    expect(result).not.toContain('AND');
+    expect(result).toContain('café');
+    expect(result).toContain('thé');
+  });
+
   it('collapses multiple spaces left by stripping', () => {
     const result = sanitizeNarrative('a AND OR b');
     // After stripping operators and collapsing spaces, should not have double spaces
