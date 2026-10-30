@@ -1,10 +1,9 @@
 /**
- * Tests for the single resolve-then-decide policy point (#3847, first slice).
+ * Tests for the single resolve-then-decide policy point (#3847).
  *
  * Covers:
- *  - Credential-store paths produce `{ kind: 'deny' }` for reads.
- *  - Credential-store paths produce `{ kind: 'allow' }` for writes (write
- *    floor is a separate axis — `assertNotDenylisted`).
+ *  - Credential-store paths produce `{ kind: 'deny' }` for reads and writes.
+ *  - Scoped actor-root and precedence cases live in path-policy.scope.test.ts.
  *  - Non-secret paths produce `{ kind: 'allow' }` for reads.
  *  - Carve-out paths (mcp.json, schedules.json, .ssh/config, .ssh/known_hosts)
  *    produce `{ kind: 'allow' }` for reads.
@@ -82,13 +81,13 @@ describe('decidePathAccess — credential stores denied for reads', () => {
 
 // ─── Credential-store paths: write axis is NOT gated here ────────────────────
 
-describe('decidePathAccess — write op is not gated by this function', () => {
-  it('returns allow for write of ~/.ssh/id_rsa (write floor is assertNotDenylisted)', () => {
-    expect(policyVerdict(join(HOME, '.ssh', 'id_rsa'), 'write')).toBe('allow');
+describe('decidePathAccess — write floor', () => {
+  it('denies write of ~/.ssh/id_rsa', () => {
+    expect(policyVerdict(join(HOME, '.ssh', 'id_rsa'), 'write')).toBe('deny');
   });
 
-  it('returns allow for write of ~/.afk/config/afk.env', () => {
-    expect(policyVerdict(join(HOME, '.afk', 'config', 'afk.env'), 'write')).toBe('allow');
+  it('denies write of ~/.afk/config/afk.env', () => {
+    expect(policyVerdict(join(HOME, '.afk', 'config', 'afk.env'), 'write')).toBe('deny');
   });
 });
 
