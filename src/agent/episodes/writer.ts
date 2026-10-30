@@ -16,7 +16,7 @@ const NARRATIVE_CAP = 2_000;
 // FTS5 operator characters that break tokenization when they appear in
 // stored content and are later used in FTS queries.
 // Strip: AND OR NOT " : * ( )
-const FTS5_UNSAFE = /AND|OR|NOT|[":*()\^]/g;
+const FTS5_UNSAFE = /\bAND\b|\bOR\b|\bNOT\b|[":*()\^]/g;
 
 /**
  * Sanitize narrative text for safe FTS5 storage.

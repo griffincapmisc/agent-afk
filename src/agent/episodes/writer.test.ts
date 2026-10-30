@@ -85,6 +85,48 @@ describe('sanitizeNarrative', () => {
     // After stripping operators and collapsing spaces, should not have double spaces
     expect(result).not.toMatch(/\s{2,}/);
   });
+
+  it('preserves ANDROID (contains AND as substring)', () => {
+    const result = sanitizeNarrative('ANDROID');
+    expect(result).toBe('ANDROID');
+  });
+
+  it('preserves NOTIFICATION (contains NOT as substring)', () => {
+    const result = sanitizeNarrative('NOTIFICATION');
+    expect(result).toBe('NOTIFICATION');
+  });
+
+  it('preserves COMMAND (contains AND as substring)', () => {
+    const result = sanitizeNarrative('COMMAND');
+    expect(result).toBe('COMMAND');
+  });
+
+  it('preserves BORDER (contains OR as substring)', () => {
+    const result = sanitizeNarrative('BORDER');
+    expect(result).toBe('BORDER');
+  });
+
+  it('preserves RECORD (contains OR as substring)', () => {
+    const result = sanitizeNarrative('RECORD');
+    expect(result).toBe('RECORD');
+  });
+
+  it('still strips standalone AND surrounded by words', () => {
+    const result = sanitizeNarrative('foo AND bar');
+    expect(result).not.toMatch(/\bAND\b/);
+    expect(result).toContain('foo');
+    expect(result).toContain('bar');
+  });
+
+  it('still strips standalone OR surrounded by words', () => {
+    const result = sanitizeNarrative('alpha OR beta');
+    expect(result).not.toMatch(/\bOR\b/);
+  });
+
+  it('still strips standalone NOT surrounded by words', () => {
+    const result = sanitizeNarrative('NOT valid');
+    expect(result).not.toMatch(/\bNOT\b/);
+  });
 });
 
 describe('formatEpisodeContent', () => {
