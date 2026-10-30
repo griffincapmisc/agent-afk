@@ -12,6 +12,48 @@ The `/changelog` slash command omits the hash (entries are formatted without it)
 
 ## [Unreleased]
 
+## [5.341.0] - 2026-10-30
+
+### Added
+- keep abandoned conversations as branches and switch with /branches (#4294) (8d4adf1e3)
+- add PTY integration test for type-during-tool-round steering (6e63f85e0)
+- add docs/acp.md — editor integration guide for afk acp (42d68c80f)
+- add /where slash command and enrich AFK.md introspection surface (8fd77f752)
+
+### Fixed
+- canonical paths in credential denials, drop matched from roots variant (72fc000f3)
+- unify daemon allowedTools and wire web backgroundAutoDeliver (#4539) (7d3a5b428)
+- share command analysis facets across security consumers (331530078)
+- share write-floor and actor-root path decisions (637a357fe)
+- share model-intent and credential dispatch preparation (2a25323b4)
+- pill positioning and transcript tab-stop (#4435) (d97a3747d)
+- delete .git-commit-msg.txt and add CLAUDE_CODE_OAUTH_TOKEN test (#4528) (d48726eeb)
+- /where slash command — tests, security, null guard (#4527) (b6a45ad7a)
+- whatif provider cleanup — unused exports, import migration, test (#4531) (564077b6e)
+- add afk receipt regenerate to rebuild v1 receipts as v2 (#4463) (26ea1b44b)
+- prevent ghost branches on failed rewind; add isSafeLedgerSessionId guard and fork tests (#4495) (2e1385a37)
+- add isSameSession guard in handleSwitch; eliminate newId! assertion in forkBeforeRewind (802e509a7)
+- check forkJournal return value; memoize loadSession in collectBranches (c0256be7e)
+- export resolveFromFound; split forkBeforeRewind try/catch with orphan cleanup (e4297d8a9)
+- address 6 review findings — security, correctness, tests (79ca958ee)
+- narrow RegisteredAgent cast to BudgetHint; add maxTurns parity probe (68e3f7edf)
+- correct acp.md — done response shape, AbortController cancel, remove Cursor MCP section (88387da8d)
+- three P0 tool reliability improvements from 30-day audit (#4475) (bfd0affb3)
+- session-meta follow-up cleanups from #4453 sidecar migration (#4460) (5ddb756e1)
+- gate claude login hint on anthropic provider; preserve codex detail (9c45397ae)
+- replace ! non-null assertions with ?? fail() for noUncheckedIndexedAccess (45d7825a6)
+- drop /orient alias collision and guard non-git directories (1ca34fedd)
+- restore claude login hint and stale status tag in formatUsage (d6f4adf31)
+- compose-level max_tool_rounds_per_node wins over named-agent frontmatter budget (4e0fd3d51)
+- surface whatif/ provider imports through stable agent/ public API (33ae3b079)
+- address advisory findings from #4259 auth account switch review (349e51e94)
+
+### Changed
+- shard Windows tests and preserve aggregate check (53a2ccff9)
+- consolidate usage formatter with shared pipeline (2e43da5de)
+- stage 3 — named-agent budget parity in buildComposeDagNode (8ec4ecc49)
+- add introspection reference docs and glossary (f8ee1faca)
+
 ## [5.340.0] - 2026-10-29
 
 ### Added
