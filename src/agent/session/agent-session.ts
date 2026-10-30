@@ -252,6 +252,7 @@ export class AgentSession implements IAgentSession {
    * await / provider-rebuild logic extracted to `agent-session.lifecycle.ts`.
    */
   private initSdkLifecycle(): void {
+    this.ledger.initialize(this.config);
     this.stateManager = applyLifecycle(this.config, {
       setStateManager: (v) => { this.stateManager = v; },
       setInputStream: (v) => { this.inputStream = v; },

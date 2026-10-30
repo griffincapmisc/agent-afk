@@ -181,6 +181,7 @@ describe('LedgerLifecycle.ensure gitHead', () => {
   it('top-level session: sidecar contains gitHead with full SHA', async () => {
     const id = freshId();
     const lc = new LedgerLifecycle();
+    lc.initialize({ cwd: gitRepo });
     lc.ensure(topCtx(id, gitRepo));
     await waitForSidecar(id);
 
@@ -198,6 +199,7 @@ describe('LedgerLifecycle.ensure gitHead', () => {
   it('top-level session, non-git cwd: gitHead has null SHA and null branch', async () => {
     const id = freshId();
     const lc = new LedgerLifecycle();
+    lc.initialize({ cwd: nonGitDir });
     lc.ensure(topCtx(id, nonGitDir));
     await waitForSidecar(id);
 
@@ -214,6 +216,7 @@ describe('LedgerLifecycle.ensure gitHead', () => {
   it('subagent session (parentSessionId set): sidecar not written at all', async () => {
     const id = freshId();
     const lc = new LedgerLifecycle();
+    lc.initialize({ cwd: gitRepo, parentSessionId: 'parent-abc' });
     lc.ensure(topCtx(id, gitRepo, { parentSessionId: 'parent-abc' }));
     // Give the async path time to run if it mistakenly fired.
     await new Promise((r) => setTimeout(r, 100));
@@ -223,6 +226,7 @@ describe('LedgerLifecycle.ensure gitHead', () => {
   it('subagent session (depth set): sidecar not written at all', async () => {
     const id = freshId();
     const lc = new LedgerLifecycle();
+    lc.initialize({ cwd: gitRepo, depth: 1 });
     lc.ensure(topCtx(id, gitRepo, { depth: 1 }));
     await new Promise((r) => setTimeout(r, 100));
     expect(readSidecar(id)).toBeNull();
